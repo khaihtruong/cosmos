@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - LLM Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .new-chat-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .search-bar input {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            width: 300px;
+        }
+        
+        .conversations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .conversation-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .conversation-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .conversation-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .conversation-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .model-badge {
+            padding: 0.25rem 0.75rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .conversation-stats {
+            display: flex;
+            gap: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .conversation-preview {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 3em;
+            overflow: hidden;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+        
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+        
+        .saved-selections-sidebar {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .saved-selections-sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            background: #f5f7fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-sidebar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .selection-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .selection-text {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .selection-note {
+            color: #666;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+        
+        .toggle-selections-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 1rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        /* --- dropdown search --- */
+        .search-bar { position: relative; }         
+
+        .search-dropdown {
+        position: absolute;
+        top: 110%;
+        left: 0;
+        width: 420px;                              
+        max-height: 320px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        z-index: 50;
+        }
+        .search-dropdown.hidden { display: none; }
+
+        .search-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover, .search-item.active { background: #f9fafb; }
+
+        .search-item .title-row {
+        display: flex; gap: 8px; align-items: center; font-weight: 600; color: #333;
+        }
+        .search-item .badge {
+        margin-left: 6px;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #e3f2fd; color: #1976d2;
+        }
+        .search-item .meta {
+        margin-left: auto; font-size: 12px; color: #6b7280;
+        }
+        .search-item .snippet {
+        margin-top: 4px; font-size: 13px; color: #374151; line-height: 1.4;
+        }
+
+        .hl { background: #fff3b0; }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>My Conversations</h1>
+        <div class="user-info">
+            <span id="username">Welcome, User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="actions-bar">
+            <button class="new-chat-btn" onclick="startNewConversation()">
+                Start New Conversation
+            </button>
+            <div class="search-bar">
+                <input
+                    type="text"
+                    placeholder="Search conversations..."
+                    id="searchInput"
+                    oninput="searchConversations()"         
+                    onkeydown="handleSearchKeydown(event)" 
+                >
+                <div id="searchDropdown" class="search-dropdown hidden"></div>
+            </div>
+        </div>
+        
+        <div class="conversations-grid" id="conversationsGrid">
+            <!-- Conversations will be loaded here -->
+        </div>
+        
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h2>No Conversations Yet</h2>
+            <p>Start your first conversation to begin chatting with AI models</p>
+            <button class="new-chat-btn" onclick="startNewConversation()">
+                Start Your First Conversation
+            </button>
+        </div>
+    </div>
+    
+    <div class="saved-selections-sidebar" id="selectionsSidebar">
+        <div class="sidebar-header">
+            <h3>Saved Selections</h3>
+            <button class="close-sidebar" onclick="toggleSelections()">×</button>
+        </div>
+        <div id="selectionsContent">
+            <!-- Saved selections will be loaded here -->
+        </div>
+    </div>
+    
+    <button class="toggle-selections-btn" onclick="toggleSelections()">📑</button>
+    
+    <script>
+        function escapeHtml(s = '') {
+            return s.replace(/[&<>"'`=\/]/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+                "'": '&#39;', '`': '&#96;', '=': '&#61;', '/': '&#47;'
+            }[ch]));
+        }
+
+            function highlight(text, query) {
+            if (!text || !query) return escapeHtml(text || '');
+            const i = text.toLowerCase().indexOf(query.toLowerCase());
+            if (i === -1) return escapeHtml(text);
+            const before = escapeHtml(text.slice(0, i));
+            const match  = escapeHtml(text.slice(i, i + query.length));
+            const after  = escapeHtml(text.slice(i + query.length));
+            return `${before}<span class="hl">${match}</span>${after}`;
+            }
+
+            function snippet(text, query, radius = 40) {
+            const t = text || '';
+            const q = (query || '').toLowerCase();
+            const i = t.toLowerCase().indexOf(q);
+            if (i === -1) return escapeHtml(t.slice(0, radius * 2));
+            const start = Math.max(0, i - radius);
+            const end   = Math.min(t.length, i + q.length + radius);
+            const pre = start > 0 ? '…' : '';
+            const suf = end < t.length ? '…' : '';
+            return pre + highlight(t.slice(start, end), query) + suf;
+            }
+
+            function buildMatches(query) {
+            const q = (query || '').trim().toLowerCase();
+            if (!q) return [];
+            const res = [];
+
+            (allConversations || []).forEach(conv => {
+                const title = conv.title || 'Untitled Conversation';
+                const model = (conv.model || '') + '';
+
+                if (title.toLowerCase().includes(q)) {
+                res.push({ convId: conv.id, kind: 'Title', snippet: snippet(title, q), title, updated_at: conv.updated_at || 0 });
+                }
+                if (model.toLowerCase().includes(q)) {
+                res.push({ convId: conv.id, kind: 'Model', snippet: snippet(model, q), title, updated_at: conv.updated_at || 0 });
+                }
+
+                const msgs = Array.isArray(conv.messages) ? conv.messages : [];
+                msgs.forEach(m => {
+                const content = m?.content || '';
+                if (content.toLowerCase().includes(q)) {
+                    res.push({
+                    convId: conv.id,
+                    kind: 'Message',
+                    role: m.role || '',
+                    snippet: snippet(content, q),
+                    title,
+                    updated_at: conv.updated_at || 0,
+                    messageId: m.id,
+                    timestamp: m.timestamp
+                    });
+                }
+                });
+            });
+
+            const rank = { Title: 0, Model: 1, Message: 2 };
+            res.sort((a, b) => (b.updated_at - a.updated_at) || (rank[a.kind] - rank[b.kind]));
+            return res.slice(0, 20);
+            }
+
+            function renderDropdown(matches) {
+            const box = document.getElementById('searchDropdown');
+            if (!matches.length) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                dropdownIndex = -1;
+                return;
+            }
+            box.innerHTML = matches.map((m, i) => `
+                <div class="search-item" data-index="${i}" onclick="onSearchPick(${i})">
+                <div class="title-row">
+                    <div>${escapeHtml(m.title)}</div>
+                    <span class="badge">${m.kind}${m.kind === 'Message' && m.role ? ` • ${escapeHtml(m.role)}` : ''}</span>
+                    ${m.timestamp ? `<div class="meta">${new Date(m.timestamp * 1000).toLocaleString()}</div>` : ''}
+                </div>
+                <div class="snippet">${m.snippet}</div>
+                </div>
+            `).join('');
+            box.classList.remove('hidden');
+            }
+
+            let dropdownIndex = -1;
+            function handleSearchKeydown(e) {
+            const box = document.getElementById('searchDropdown');
+            const items = Array.from(box.querySelectorAll('.search-item'));
+            if (box.classList.contains('hidden') || !items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                dropdownIndex = (dropdownIndex + 1) % items.length;
+                items.forEach((el, i) => el.classList.toggle('active', i === dropdownIndex));
+                items[dropdownIndex].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                dropdownIndex = (dropdownIndex - 1 + items.length) % items.length;
+                items.forEach((el, i) => el.classList.toggle('active', i === dropdownIndex));
+                items[dropdownIndex].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter' && dropdownIndex >= 0) {
+                e.preventDefault();
+                onSearchPick(dropdownIndex);
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            }
+            }
+
+            function hideDropdown() {
+            const box = document.getElementById('searchDropdown');
+            box.classList.add('hidden');
+            dropdownIndex = -1;
+            }
+
+            function onSearchPick(index) {
+            const q = document.getElementById('searchInput').value;
+            const matches = buildMatches(q);
+            const picked = matches[index];
+            hideDropdown();
+            openConversation(picked.convId); // uses your existing function
+            }
+
+            // Hide when clicking outside
+            document.addEventListener('click', (e) => {
+            const bar = document.querySelector('.search-bar');
+            if (bar && !bar.contains(e.target)) hideDropdown();
+            });
+        let allConversations = [];
+        
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to load conversations');
+                }
+                
+                allConversations = await response.json();
+                displayConversations(allConversations);
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+        
+        function displayConversations(conversations) {
+            const grid = document.getElementById('conversationsGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (conversations.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+            
+            grid.innerHTML = conversations.map(conv => `
+                <div class="conversation-card" onclick="openConversation(${conv.id})">
+                    <div class="conversation-title">${conv.title}</div>
+                    <div class="conversation-meta">
+                        <span class="model-badge">${conv.model}</span>
+                        <span>${formatDate(conv.updated_at)}</span>
+                    </div>
+                    <div class="conversation-stats">
+                        <div class="stat-item">
+                            💬 ${conv.message_count} messages
+                        </div>
+                        <div class="stat-item">
+                            🕐 ${formatRelativeTime(conv.updated_at)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function searchConversations() {
+            const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+            // 1) Filter grid
+            const filtered = (allConversations || []).filter(conv => {
+                const inTitle = (conv.title || '').toLowerCase().includes(q);
+                const inModel = (conv.model || '').toLowerCase().includes(q);
+                const inMsgs  = Array.isArray(conv.messages) &&
+                conv.messages.some(m => (m?.content || '').toLowerCase().includes(q));
+                return q ? (inTitle || inModel || inMsgs) : true;
+            });
+            displayConversations(filtered);
+
+            // 2) Build dropdown with labeled/highlighted matches
+            const matches = buildMatches(q);
+            renderDropdown(matches);
+        }
+
+        
+        function formatDate(timestamp) {
+            return new Date(timestamp * 1000).toLocaleDateString();
+        }
+        
+        function formatRelativeTime(timestamp) {
+            const now = Date.now() / 1000;
+            const diff = now - timestamp;
+            
+            if (diff < 3600) {
+                const mins = Math.floor(diff / 60);
+                return `${mins} min${mins !== 1 ? 's' : ''} ago`;
+            } else if (diff < 86400) {
+                const hours = Math.floor(diff / 3600);
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diff / 86400);
+                return `${days} day${days !== 1 ? 's' : ''} ago`;
+            }
+        }
+        
+        function startNewConversation() {
+            window.location.href = '/conversation/new';
+        }
+        
+        function openConversation(id) {
+            window.location.href = `/conversation/${id}`;
+        }
+        
+        async function loadSelections() {
+            try {
+                const response = await fetch('/api/selections');
+                const selections = await response.json();
+                
+                const content = document.getElementById('selectionsContent');
+                if (selections.length === 0) {
+                    content.innerHTML = '<div class="selection-item">No saved selections yet</div>';
+                } else {
+                    content.innerHTML = selections.map(sel => `
+                        <div class="selection-item">
+                            <div class="selection-text">${sel.text}</div>
+                            ${sel.note ? `<div class="selection-note">${sel.note}</div>` : ''}
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading selections:', error);
+            }
+        }
+        
+        function toggleSelections() {
+            const sidebar = document.getElementById('selectionsSidebar');
+            sidebar.classList.toggle('open');
+            if (sidebar.classList.contains('open')) {
+                loadSelections();
+            }
+        }
+        
+        async function logout() {
+            await fetch('/logout');
+            window.location.href = '/login';
+        }
+        
+        // Load data on page load
+        loadConversations();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LLM Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            background: #ffebee;
+            color: #c62828;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h2 {
+            font-size: 1.2rem;
+        }
+        
+        .add-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .add-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .panel-content {
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .user-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .user-role {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        .user-role.admin {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .user-role.provider {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .user-role.user {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h3 {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4682B4;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .assignment-item {
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .assignment-info {
+            font-size: 0.9rem;
+        }
+        
+        .remove-btn {
+            padding: 0.25rem 0.5rem;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .settings-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .settings-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .setting-item {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .setting-item label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .setting-item input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .setting-item input[type="number"] {
+            width: 100px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        #userSettingsSelect {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .global-settings-bar {
+            background: white;
+            margin: 2rem auto 0;
+            max-width: 1400px;
+            padding: 0 2rem;
+        }
+        
+        .global-settings {
+            background: linear-gradient(135deg, #E6F3FF 0%, #B0D4F1 30%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .global-settings h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .global-controls {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .toggle-setting {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .toggle-setting:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        
+        .toggle-setting input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        
+        .toggle-setting span {
+            font-size: 0.9rem;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <div class="user-info">
+            <span class="role-badge">ADMIN</span>
+            <span id="username">Administrator</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Providers</div>
+                <div class="stat-value" id="totalProviders">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Patients</div>
+                <div class="stat-value" id="totalPatients">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Conversations</div>
+                <div class="stat-value" id="totalConversations">0</div>
+            </div>
+        </div>
+        
+        <div class="global-settings-bar">
+            <div class="global-settings">
+                <h3>Global System Settings</h3>
+                <div class="global-controls">
+                    <label class="toggle-setting">
+                        <input type="checkbox" id="providersCanSetPrompts" onchange="updateGlobalSetting('providers_can_set_custom_prompts', this.checked)">
+                        <span>Providers can set custom prompts</span>
+                    </label>
+                    <label class="toggle-setting">
+                        <input type="checkbox" id="usersCanSaveSelections" onchange="updateGlobalSetting('users_can_save_selections', this.checked)">
+                        <span>Users can save text selections</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>All Users</h2>
+                    <button class="add-btn" onclick="showCreateUserModal()">+ Add User</button>
+                </div>
+                <div class="panel-content" id="usersList">
+                    <!-- Users will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Provider Assignments</h2>
+                    <button class="add-btn" onclick="showAssignmentModal()">+ Assign Patient</button>
+                </div>
+                <div class="panel-content" id="assignmentsList">
+                    <!-- Assignments will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create User Modal -->
+    <div class="modal" id="createUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New User</h3>
+            </div>
+            <form onsubmit="createUser(event)">
+                <div class="form-group">
+                    <label for="newUsername">Username</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newEmail">Email</label>
+                    <input type="email" id="newEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newRole">Role</label>
+                    <select id="newRole" required>
+                        <option value="user">User (Patient)</option>
+                        <option value="provider">Provider</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideModal('createUserModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Assignment Modal -->
+    <div class="modal" id="assignmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Assign Patient to Provider</h3>
+            </div>
+            <form onsubmit="assignProvider(event)">
+                <div class="form-group">
+                    <label for="selectProvider">Provider</label>
+                    <select id="selectProvider" required>
+                        <!-- Providers will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectPatient">Patient</label>
+                    <select id="selectPatient" required>
+                        <!-- Patients will be loaded here -->
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideModal('assignmentModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- User Settings Modal -->
+    <div class="modal" id="userSettingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="userSettingsModalTitle">User Settings</h3>
+            </div>
+            <form onsubmit="saveUserSettingsModal(event)">
+                <div id="userSettingsForm">
+                    <!-- Settings form will be populated dynamically -->
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideModal('userSettingsModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let allUsers = [];
+        let assignments = [];
+        
+        async function loadDashboard() {
+            try {
+                // Load statistics
+                const statsResponse = await fetch('/api/admin/stats');
+                const stats = await statsResponse.json();
+                
+                // Update stats
+                document.getElementById('totalUsers').textContent = stats.total_users;
+                document.getElementById('totalProviders').textContent = stats.total_providers;
+                document.getElementById('totalPatients').textContent = stats.total_patients;
+                document.getElementById('totalConversations').textContent = stats.total_conversations;
+                
+                // Load all users
+                const response = await fetch('/api/admin/users');
+                allUsers = await response.json();
+                
+                // Display users
+                displayUsers();
+                
+                // Load assignments
+                loadAssignments();
+                
+                // Load system settings
+                loadSystemSettings();
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+        
+        function displayUsers() {
+            const list = document.getElementById('usersList');
+            
+            if (allUsers.length === 0) {
+                list.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No users yet</div>';
+                return;
+            }
+            
+            list.innerHTML = allUsers.map(user => `
+                <div class="user-item">
+                    <div class="user-details">
+                        <div class="user-name">
+                            ${user.username}
+                            <span class="user-role ${user.role}">${user.role.toUpperCase()}</span>
+                        </div>
+                        <div class="user-meta">${user.email}</div>
+                    </div>
+                    <div class="user-actions">
+                        ${user.role === 'user' ? '<button class="action-btn" onclick="viewUserConversations(' + user.id + ')">View Chats</button>' : ''}
+                        ${user.role === 'provider' ? '<button class="action-btn" onclick="viewProviderPatients(' + user.id + ')">View Patients</button>' : ''}
+                        <button class="action-btn" onclick="showUserSettingsModal(' + user.id + ', \'' + user.role + '\')">⚙️ Settings</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadAssignments() {
+            try {
+                const response = await fetch('/api/admin/assignments');
+                const assignments = await response.json();
+                
+                const list = document.getElementById('assignmentsList');
+                
+                if (assignments.length === 0) {
+                    list.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No assignments yet</div>';
+                    return;
+                }
+                
+                list.innerHTML = assignments.map(assignment => `
+                    <div class="assignment-item">
+                        <div class="assignment-info">
+                            <strong>${assignment.provider_name}</strong> → ${assignment.patient_name}
+                            <br>
+                            <small style="color: #666;">Assigned by ${assignment.assigned_by} on ${formatDate(assignment.created_at)}</small>
+                        </div>
+                        <button class="remove-btn" onclick="removeAssignment(${assignment.id})">Remove</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+            }
+        }
+        
+        function showCreateUserModal() {
+            document.getElementById('createUserModal').classList.add('show');
+        }
+        
+        function showAssignmentModal() {
+            const providers = allUsers.filter(u => u.role === 'provider');
+            const patients = allUsers.filter(u => u.role === 'user');
+            
+            document.getElementById('selectProvider').innerHTML = 
+                '<option value="">Select a provider...</option>' +
+                providers.map(p => `<option value="${p.id}">${p.username}</option>`).join('');
+            
+            document.getElementById('selectPatient').innerHTML = 
+                '<option value="">Select a patient...</option>' +
+                patients.map(p => `<option value="${p.id}">${p.username}</option>`).join('');
+            
+            document.getElementById('assignmentModal').classList.add('show');
+        }
+        
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+        
+        async function createUser(event) {
+            event.preventDefault();
+            
+            const userData = {
+                username: document.getElementById('newUsername').value,
+                email: document.getElementById('newEmail').value,
+                password: document.getElementById('newPassword').value,
+                role: document.getElementById('newRole').value
+            };
+            
+            try {
+                const response = await fetch('/api/admin/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                if (response.ok) {
+                    hideModal('createUserModal');
+                    loadDashboard();
+                    alert('User created successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert('Failed to create user');
+            }
+        }
+        
+        async function assignProvider(event) {
+            event.preventDefault();
+            
+            const assignment = {
+                provider_id: parseInt(document.getElementById('selectProvider').value),
+                patient_id: parseInt(document.getElementById('selectPatient').value)
+            };
+            
+            try {
+                const response = await fetch('/api/admin/assign_provider', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(assignment)
+                });
+                
+                if (response.ok) {
+                    hideModal('assignmentModal');
+                    loadAssignments();
+                    alert('Assignment created successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error creating assignment:', error);
+                alert('Failed to create assignment');
+            }
+        }
+        
+        async function viewUserConversations(userId) {
+            try {
+                const response = await fetch(`/api/admin/user/${userId}/conversations`);
+                const conversations = await response.json();
+                
+                const user = allUsers.find(u => u.id === userId);
+                const userName = user ? user.username : 'Unknown User';
+                
+                if (conversations.length === 0) {
+                    alert(`${userName} has no conversations yet.`);
+                    return;
+                }
+                
+                let message = `Conversations for ${userName}:\n\n`;
+                conversations.forEach((conv, index) => {
+                    const date = new Date(conv.created_at * 1000).toLocaleDateString();
+                    message += `${index + 1}. ${conv.title}\n`;
+                    message += `   Model: ${conv.model} | Messages: ${conv.message_count} | Created: ${date}\n\n`;
+                });
+                
+                alert(message);
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                alert('Failed to load conversations');
+            }
+        }
+        
+        async function viewProviderPatients(providerId) {
+            try {
+                const response = await fetch(`/api/admin/provider/${providerId}/patients`);
+                const patients = await response.json();
+                
+                const provider = allUsers.find(u => u.id === providerId);
+                const providerName = provider ? provider.username : 'Unknown Provider';
+                
+                if (patients.length === 0) {
+                    alert(`${providerName} has no assigned patients yet.`);
+                    return;
+                }
+                
+                let message = `Patients assigned to ${providerName}:\n\n`;
+                patients.forEach((patient, index) => {
+                    message += `${index + 1}. ${patient.username} (${patient.email})\n`;
+                    message += `   Conversations: ${patient.conversation_count}\n`;
+                    if (patient.last_active) {
+                        const lastActive = new Date(patient.last_active * 1000).toLocaleDateString();
+                        message += `   Last active: ${lastActive}\n`;
+                    }
+                    message += '\n';
+                });
+                
+                alert(message);
+            } catch (error) {
+                console.error('Error loading patients:', error);
+                alert('Failed to load patients');
+            }
+        }
+        
+        async function removeAssignment(assignmentId) {
+            if (!confirm('Are you sure you want to remove this assignment?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/assignment/${assignmentId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadAssignments();
+                    alert('Assignment removed successfully!');
+                } else {
+                    alert('Failed to remove assignment');
+                }
+            } catch (error) {
+                console.error('Error removing assignment:', error);
+                alert('Failed to remove assignment');
+            }
+        }
+        
+        function formatDate(timestamp) {
+            return new Date(timestamp * 1000).toLocaleDateString();
+        }
+        
+        async function loadSystemSettings() {
+            try {
+                const response = await fetch('/api/admin/settings');
+                const settings = await response.json();
+                
+                // Update global settings checkboxes
+                document.getElementById('providersCanSetPrompts').checked = settings.providers_can_set_custom_prompts === true;
+                document.getElementById('usersCanSaveSelections').checked = settings.users_can_save_selections === true;
+                
+            } catch (error) {
+                console.error('Error loading system settings:', error);
+            }
+        }
+        
+        async function updateGlobalSetting(settingName, value) {
+            try {
+                const response = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        [settingName]: value
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log(`Updated ${settingName} to ${value}`);
+                } else {
+                    alert('Failed to update setting');
+                }
+            } catch (error) {
+                console.error('Error updating setting:', error);
+                alert('Error updating setting');
+            }
+        }
+        
+        let currentUserSettings = {};
+        
+        async function showUserSettingsModal(userId, userRole) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            document.getElementById('userSettingsModalTitle').textContent = `Settings for ${user.username} (${userRole})`;
+            
+            // Load current settings
+            try {
+                const response = await fetch(`/api/admin/user/${userId}/settings`);
+                currentUserSettings = await response.json();
+                currentUserSettings.userId = userId;
+                currentUserSettings.userRole = userRole;
+                
+                // Populate form based on user role
+                populateUserSettingsForm(userRole);
+                
+                document.getElementById('userSettingsModal').classList.add('show');
+                
+            } catch (error) {
+                console.error('Error loading user settings:', error);
+                alert('Error loading user settings');
+            }
+        }
+        
+        function populateUserSettingsForm(userRole) {
+            const form = document.getElementById('userSettingsForm');
+            let formHTML = '';
+            
+            if (userRole === 'provider') {
+                formHTML = `
+                    <div class="form-group">
+                        <label>Max Conversations per Day</label>
+                        <input type="number" id="maxConversationsProvider" min="1" max="1000" value="${currentUserSettings.max_conversations_per_day || ''}" placeholder="Unlimited">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="canUseCustomPromptsProvider" ${currentUserSettings.can_use_custom_prompts ? 'checked' : ''}>
+                            Can create custom prompts for patients
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="canSaveSelectionsProvider" ${currentUserSettings.can_save_selections ? 'checked' : ''}>
+                            Can save text selections
+                        </label>
+                    </div>
+                `;
+            } else if (userRole === 'user') {
+                formHTML = `
+                    <div class="form-group">
+                        <label>Max Conversations per Day</label>
+                        <input type="number" id="maxConversationsUser" min="1" max="100" value="${currentUserSettings.max_conversations_per_day || ''}" placeholder="Unlimited">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Messages per Conversation</label>
+                        <input type="number" id="maxMessagesUser" min="1" max="1000" value="${currentUserSettings.max_messages_per_conversation || ''}" placeholder="Unlimited">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="canSaveSelectionsUser" ${currentUserSettings.can_save_selections ? 'checked' : ''}>
+                            Can save text selections
+                        </label>
+                    </div>
+                `;
+            } else if (userRole === 'admin') {
+                formHTML = `
+                    <div class="form-group">
+                        <p style="color: #666; font-style: italic;">Admin accounts have full system access and cannot be restricted.</p>
+                    </div>
+                `;
+            }
+            
+            form.innerHTML = formHTML;
+        }
+        
+        async function saveUserSettingsModal(event) {
+            event.preventDefault();
+            
+            if (!currentUserSettings.userId) return;
+            
+            let settings = {};
+            const userRole = currentUserSettings.userRole;
+            
+            if (userRole === 'provider') {
+                settings = {
+                    max_conversations_per_day: document.getElementById('maxConversationsProvider').value ? parseInt(document.getElementById('maxConversationsProvider').value) : null,
+                    can_use_custom_prompts: document.getElementById('canUseCustomPromptsProvider').checked,
+                    can_save_selections: document.getElementById('canSaveSelectionsProvider').checked
+                };
+            } else if (userRole === 'user') {
+                settings = {
+                    max_conversations_per_day: document.getElementById('maxConversationsUser').value ? parseInt(document.getElementById('maxConversationsUser').value) : null,
+                    max_messages_per_conversation: document.getElementById('maxMessagesUser').value ? parseInt(document.getElementById('maxMessagesUser').value) : null,
+                    can_save_selections: document.getElementById('canSaveSelectionsUser').checked
+                };
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/user/${currentUserSettings.userId}/settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+                
+                if (response.ok) {
+                    alert('User settings saved successfully!');
+                    hideModal('userSettingsModal');
+                } else {
+                    alert('Failed to save user settings');
+                }
+            } catch (error) {
+                console.error('Error saving user settings:', error);
+                alert('Error saving user settings');
+            }
+        }
+        
+        async function logout() {
+            await fetch('/logout');
+            window.location.href = '/login';
+        }
+        
+        // Load dashboard on page load
+        loadDashboard();
+        
+        // Click outside modal to close
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

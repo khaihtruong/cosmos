@@ -1,0 +1,12 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Migrate==4.0.4
+Flask-Login==0.6.3
+requests==2.31.0
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# LLM Provider SDKs (install only what you need)
+openai==1.35.0
+anthropic==0.25.0
+google-generativeai==0.5.0
