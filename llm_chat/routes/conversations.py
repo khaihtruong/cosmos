@@ -21,7 +21,8 @@ def user_dashboard():
         return render_template("admin_dashboard.html")
     elif current_user.is_provider():
         return render_template("provider_dashboard.html")
-    return render_template("user_dashboard.html")
+    # For patients, show the new chat windows interface
+    return render_template("user_chat_windows.html")
 
 @conv_bp.route("/conversation/new")
 @login_required

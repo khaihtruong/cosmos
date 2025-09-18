@@ -12,6 +12,11 @@ provider_bp = Blueprint("provider", __name__, url_prefix="")
 def provider_dashboard():
     return render_template("provider_dashboard.html")
 
+@provider_bp.route("/provider/chat-windows")
+@role_required('provider', 'admin')
+def provider_chat_windows():
+    return render_template("provider_chat_windows.html")
+
 @provider_bp.route("/api/provider/patients")
 @role_required('provider', 'admin')
 def get_provider_patients():

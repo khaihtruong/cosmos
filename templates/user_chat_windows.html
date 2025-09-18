@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chat Sessions - LLM Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .window-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .window-header {
+            border-bottom: 2px solid #e8f5e9;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .window-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .window-meta {
+            display: flex;
+            gap: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .window-description {
+            color: #555;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .chat-templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .template-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .template-card:hover {
+            border-color: #4682B4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .template-card.has-conversation {
+            border-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .template-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .template-purpose {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .template-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .model-badge {
+            padding: 0.25rem 0.75rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .template-action {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .template-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(70, 130, 180, 0.4);
+        }
+
+        .template-action.continue {
+            background: #4CAF50;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .date-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .date-indicator.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .existing-conversations {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>My Chat Sessions</h1>
+        <div class="user-info">
+            <span id="username">Welcome, User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="windowsContainer">
+            <!-- Chat windows will be loaded here -->
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h2>No Active Chat Sessions</h2>
+            <p>Your clinician will set up chat sessions for you when needed.</p>
+            <p>Please check back later or contact your provider if you believe this is an error.</p>
+        </div>
+
+        <div class="existing-conversations" id="existingConversations" style="display: none;">
+            <h2 class="section-title">Previous Conversations</h2>
+            <div id="conversationsList">
+                <!-- Previous conversations will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWindows = [];
+        let conversations = [];
+
+        async function loadChatWindows() {
+            try {
+                const response = await fetch('/api/windows/current');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to load chat windows');
+                }
+
+                currentWindows = await response.json();
+                displayWindows();
+            } catch (error) {
+                console.error('Error loading chat windows:', error);
+            }
+        }
+
+        function displayWindows() {
+            const container = document.getElementById('windowsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (currentWindows.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'block';
+            emptyState.style.display = 'none';
+
+            container.innerHTML = currentWindows.map(window => {
+                const startDate = new Date(window.start_date * 1000);
+                const endDate = new Date(window.end_date * 1000);
+                const now = Date.now() / 1000;
+                const isActive = window.is_current;
+
+                return `
+                    <div class="window-card">
+                        <div class="window-header">
+                            <div class="window-title">${window.title}</div>
+                            <div class="window-meta">
+                                <span class="date-indicator ${isActive ? 'active' : ''}">
+                                    ${isActive ? '🟢 Active' : '⏰ Scheduled'}
+                                </span>
+                                <span>📅 ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        ${window.description ? `<div class="window-description">${window.description}</div>` : ''}
+                        <div class="chat-templates">
+                            ${window.templates.map(template => `
+                                <div class="template-card ${template.has_conversation ? 'has-conversation' : ''}"
+                                     onclick="handleTemplateClick(${template.id}, ${template.conversation_id || 'null'})">
+                                    <div class="template-title">${template.title}</div>
+                                    ${template.purpose ? `<div class="template-purpose">${template.purpose}</div>` : ''}
+                                    <div class="template-meta">
+                                        <span class="model-badge">${template.model}</span>
+                                        <button class="template-action ${template.has_conversation ? 'continue' : ''}">
+                                            ${template.has_conversation ? 'Continue' : 'Start'}
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleTemplateClick(templateId, conversationId) {
+            if (conversationId) {
+                // Open existing conversation
+                window.location.href = `/conversation/${conversationId}`;
+            } else {
+                // Start new conversation from template
+                try {
+                    const response = await fetch('/api/windows/start_conversation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            template_id: templateId
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to start conversation');
+                    }
+
+                    const data = await response.json();
+                    window.location.href = `/conversation/${data.id}`;
+                } catch (error) {
+                    console.error('Error starting conversation:', error);
+                    alert('Failed to start conversation. Please try again.');
+                }
+            }
+        }
+
+        async function loadExistingConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                conversations = await response.json();
+
+                // Filter out conversations that are part of current windows
+                const windowConvIds = currentWindows.flatMap(w =>
+                    w.templates.filter(t => t.conversation_id).map(t => t.conversation_id)
+                );
+
+                const oldConversations = conversations.filter(c => !windowConvIds.includes(c.id));
+
+                if (oldConversations.length > 0) {
+                    const existingSection = document.getElementById('existingConversations');
+                    const list = document.getElementById('conversationsList');
+
+                    existingSection.style.display = 'block';
+                    list.innerHTML = oldConversations.map(conv => `
+                        <div class="template-card" onclick="window.location.href='/conversation/${conv.id}'">
+                            <div class="template-title">${conv.title}</div>
+                            <div class="template-meta">
+                                <span class="model-badge">${conv.model}</span>
+                                <span>${formatDate(conv.updated_at)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp * 1000).toLocaleDateString();
+        }
+
+        async function logout() {
+            await fetch('/logout');
+            window.location.href = '/login';
+        }
+
+        // Load data on page load
+        async function initialize() {
+            await loadChatWindows();
+            await loadExistingConversations();
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

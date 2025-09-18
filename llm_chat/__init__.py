@@ -8,6 +8,7 @@ from .routes.auth import auth_blp
 from .routes.conversations import conv_bp
 from .routes.provider import provider_bp
 from .routes.admin import admin_bp
+from .routes.chat_windows import window_bp
 from flask_smorest import Api
 
 # Load variables from .env
@@ -48,5 +49,6 @@ def create_app():
     app.register_blueprint(conv_bp)
     app.register_blueprint(provider_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(window_bp)
 
     return app
