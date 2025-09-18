@@ -124,14 +124,25 @@ class LLMInterface:
                 if not client:
                     raise RuntimeError("Google client not available")
 
+                # Extract system prompt
+                system_instruction = None
                 gemini_messages = []
                 for msg in formatted_messages:
                     if msg['role'] == 'system':
-                        continue
-                    role = 'model' if msg['role'] == 'assistant' else 'user'
-                    gemini_messages.append({'role': role, 'parts': [{'text': msg['content']}]})
+                        system_instruction = msg['content']
+                    else:
+                        role = 'model' if msg['role'] == 'assistant' else 'user'
+                        gemini_messages.append({'role': role, 'parts': [{'text': msg['content']}]})
 
-                model_obj = genai.GenerativeModel(model.model_identifier)
+                # Create model with system instruction if available
+                if system_instruction:
+                    model_obj = genai.GenerativeModel(
+                        model_name=model.model_identifier,
+                        system_instruction=system_instruction
+                    )
+                else:
+                    model_obj = genai.GenerativeModel(model.model_identifier)
+
                 response = model_obj.generate_content(
                     contents=gemini_messages,
                     generation_config={

@@ -10,13 +10,13 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
         }
-        
+
         .header {
             background: white;
             padding: 1rem 2rem;
@@ -25,18 +25,18 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .header h1 {
             color: #333;
             font-size: 1.5rem;
         }
-        
+
         .user-info {
             display: flex;
             align-items: center;
             gap: 1rem;
         }
-        
+
         .role-badge {
             padding: 0.25rem 0.75rem;
             background: #e8f5e9;
@@ -45,7 +45,7 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
-        
+
         .logout-btn {
             padding: 0.5rem 1rem;
             background: #ff4757;
@@ -55,233 +55,70 @@
             cursor: pointer;
             font-weight: 500;
         }
-        
-        .dashboard-container {
-            display: flex;
-            max-width: 1400px;
+
+        .container {
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 0 2rem;
-            gap: 2rem;
         }
-        
-        .patients-panel {
-            flex: 1;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-        
-        .panel-header {
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
-            color: white;
-        }
-        
-        .panel-header h2 {
-            margin-bottom: 0.5rem;
-        }
-        
-        .panel-header p {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-        
-        .patients-list {
-            padding: 1rem;
-        }
-        
-        .patient-card {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .patient-card:hover {
-            background: #e8f5e9;
-            transform: translateX(4px);
-        }
-        
-        .patient-card.selected {
-            background: #e8f5e9;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .patient-info {
-            flex: 1;
-        }
-        
-        .patient-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.25rem;
-        }
-        
-        .patient-email {
-            font-size: 0.85rem;
-            color: #666;
-        }
-        
-        .patient-stats {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.85rem;
-            color: #666;
-        }
-        
-        .patient-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .action-btn {
-            padding: 0.5rem 1rem;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-        
-        .action-btn:hover {
-            background: #f0f0f0;
-        }
-        
-        .details-panel {
-            flex: 2;
+
+        .welcome-section {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             padding: 2rem;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 1rem;
             margin-bottom: 2rem;
-            border-bottom: 2px solid #f0f0f0;
+            text-align: center;
         }
-        
-        .tab {
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
+
+        .welcome-section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-section p {
             color: #666;
-            position: relative;
-            transition: color 0.3s;
+            margin-bottom: 2rem;
         }
-        
-        .tab.active {
-            color: #4682B4;
+
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
-        
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #4682B4;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .conversations-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .conversation-item {
-            padding: 1rem;
-            border-bottom: 1px solid #f0f0f0;
+
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
             cursor: pointer;
-            transition: background 0.3s;
         }
-        
-        .conversation-item:hover {
-            background: #f8f9fa;
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
-        
-        .conversation-title {
-            font-weight: 600;
+
+        .action-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-card h3 {
             color: #333;
             margin-bottom: 0.5rem;
         }
-        
-        .conversation-meta {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.85rem;
+
+        .action-card p {
             color: #666;
+            margin-bottom: 1.5rem;
         }
-        
-        .settings-form {
-            display: grid;
-            gap: 1.5rem;
-        }
-        
-        .form-group {
-            display: grid;
-            gap: 0.5rem;
-        }
-        
-        .form-group label {
-            font-weight: 500;
-            color: #333;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            padding: 0.75rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #4682B4;
-        }
-        
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.5rem;
-        }
-        
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .time-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        
-        .save-btn {
-            padding: 0.75rem 2rem;
+
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
             background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
             color: white;
             border: none;
@@ -289,23 +126,41 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 1rem;
-            justify-self: start;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
-        
-        .save-btn:hover {
+
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(70, 130, 180, 0.4);
         }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
-        
-        .empty-state h3 {
-            color: #333;
-            margin-bottom: 1rem;
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4682B4;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -313,319 +168,96 @@
     <div class="header">
         <h1>Provider Dashboard</h1>
         <div class="user-info">
-            <span class="role-badge">PROVIDER</span>
-            <span id="username">Provider</span>
+            <span class="role-badge">Provider</span>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </div>
-    
-    <div class="dashboard-container">
-        <div class="patients-panel">
-            <div class="panel-header">
-                <h2>My Patients</h2>
-                <p id="patientCount">Loading patients...</p>
-            </div>
-            <div class="patients-list" id="patientsList">
-                <!-- Patients will be loaded here -->
-            </div>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h2>Welcome to the Provider Dashboard</h2>
+            <p>Manage your patients' chat sessions and therapeutic conversations</p>
         </div>
-        
-        <div class="details-panel">
-            <div class="empty-state" id="emptyState">
-                <h3>Select a Patient</h3>
-                <p>Choose a patient from the list to view their conversations and manage settings</p>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <div class="action-cards">
+            <div class="action-card" onclick="window.location.href='/provider/chat-windows'">
+                <div class="icon">🗨️</div>
+                <h3>Manage Chat Windows</h3>
+                <p>Create and configure time-bounded chat sessions for your patients</p>
+                <a href="/provider/chat-windows" class="btn-primary">Manage Windows</a>
             </div>
-            
-            <div id="patientDetails" style="display: none;">
-                <h2 id="selectedPatientName"></h2>
-                
-                <div class="tabs">
-                    <button class="tab active" onclick="switchTab('conversations')">Conversations</button>
-                    <button class="tab" onclick="switchTab('settings')">Settings</button>
-                </div>
-                
-                <div class="tab-content active" id="conversationsTab">
-                    <div class="conversations-list" id="conversationsList">
-                        <!-- Conversations will be loaded here -->
-                    </div>
-                </div>
-                
-                <div class="tab-content" id="settingsTab">
-                    <form class="settings-form" onsubmit="saveSettings(event)">
-                        <div class="form-group">
-                            <label>Allowed Models</label>
-                            <div class="checkbox-group" id="modelsCheckboxes">
-                                <!-- Model checkboxes will be loaded here -->
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="systemPrompt">System Prompt</label>
-                            <select id="systemPrompt">
-                                <option value="">Patient can choose</option>
-                                <!-- Prompts will be loaded here -->
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Chat Time Window</label>
-                            <div class="time-inputs">
-                                <input type="time" id="timeStart" placeholder="Start time">
-                                <input type="time" id="timeEnd" placeholder="End time">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="maxMessages">Max Messages Per Day</label>
-                            <input type="number" id="maxMessages" min="1" max="1000" placeholder="No limit">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="customInstructions">Custom Instructions</label>
-                            <textarea id="customInstructions" rows="4" placeholder="Additional instructions that will be added to the AI's system prompt for this patient's conversations..."></textarea>
-                            <small style="color: #666; font-size: 0.85rem; margin-top: 0.5rem; display: block;">
-                                These instructions will be automatically added to every conversation this patient has with the AI. 
-                                Use this to provide specific guidance, tone, or behavioral requirements for the AI when interacting with this patient.
-                            </small>
-                        </div>
-                        
-                        <button type="submit" class="save-btn">Save Settings</button>
-                    </form>
-                </div>
+
+            <div class="action-card" onclick="viewPatientProgress()">
+                <div class="icon">📊</div>
+                <h3>View Patient Progress</h3>
+                <p>Monitor patient conversations and therapeutic progress</p>
+                <button class="btn-primary" onclick="viewPatientProgress()">View Progress</button>
+            </div>
+
+            <div class="action-card" onclick="manageSettings()">
+                <div class="icon">⚙️</div>
+                <h3>Settings & Preferences</h3>
+                <p>Configure global settings and therapeutic guidelines</p>
+                <button class="btn-primary" onclick="manageSettings()">Settings</button>
             </div>
         </div>
     </div>
-    
+
     <script>
-        let selectedPatientId = null;
-        let allModels = [];
-        let allPrompts = [];
-        
-        async function loadPatients() {
+        async function loadStats() {
             try {
-                const response = await fetch('/api/provider/patients');
-                const patients = await response.json();
-                
-                document.getElementById('patientCount').textContent = `${patients.length} patient${patients.length !== 1 ? 's' : ''}`;
-                
-                const list = document.getElementById('patientsList');
-                if (patients.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><p>No patients assigned yet</p></div>';
-                    return;
-                }
-                
-                list.innerHTML = patients.map(patient => `
-                    <div class="patient-card" onclick="selectPatient(${patient.id})" data-patient-id="${patient.id}">
-                        <div class="patient-info">
-                            <div class="patient-name">${patient.username}</div>
-                            <div class="patient-email">${patient.email}</div>
-                            <div class="patient-stats">
-                                <span>📝 ${patient.conversation_count} conversations</span>
-                                ${patient.last_active ? `<span>🕐 ${formatRelativeTime(patient.last_active)}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="patient-actions">
-                            <button class="action-btn" onclick="viewPatientChats(event, ${patient.id})">View Chats</button>
-                        </div>
+                const patientsResponse = await fetch('/api/provider/patients');
+                const patients = await patientsResponse.json();
+
+                const windowsResponse = await fetch('/api/windows/');
+                const windows = await windowsResponse.json();
+
+                const activeWindows = windows.filter(w => w.is_current);
+
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${patients.length}</div>
+                        <div class="stat-label">Total Patients</div>
                     </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading patients:', error);
-            }
-        }
-        
-        async function selectPatient(patientId) {
-            selectedPatientId = patientId;
-            
-            // Update UI
-            document.querySelectorAll('.patient-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.querySelector(`[data-patient-id="${patientId}"]`).classList.add('selected');
-            
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('patientDetails').style.display = 'block';
-            
-            // Load patient data
-            const patientCard = document.querySelector(`[data-patient-id="${patientId}"]`);
-            const patientName = patientCard.querySelector('.patient-name').textContent;
-            document.getElementById('selectedPatientName').textContent = patientName;
-            
-            // Load conversations
-            loadPatientConversations(patientId);
-            
-            // Load settings
-            loadPatientSettings(patientId);
-        }
-        
-        async function loadPatientConversations(patientId) {
-            try {
-                const response = await fetch(`/api/provider/patient/${patientId}/conversations`);
-                const conversations = await response.json();
-                
-                const list = document.getElementById('conversationsList');
-                
-                if (conversations.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><p>No conversations yet</p></div>';
-                    return;
-                }
-                
-                list.innerHTML = conversations.map(conv => `
-                    <div class="conversation-item" onclick="viewConversation(${conv.id})">
-                        <div class="conversation-title">${conv.title}</div>
-                        <div class="conversation-meta">
-                            <span>🤖 ${conv.model}</span>
-                            <span>💬 ${conv.message_count} messages</span>
-                            <span>📅 ${formatDate(conv.created_at)}</span>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${windows.length}</div>
+                        <div class="stat-label">Chat Windows</div>
                     </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-            }
-        }
-        
-        async function loadPatientSettings(patientId) {
-            try {
-                // Load available models and prompts if not already loaded
-                if (allModels.length === 0) {
-                    const modelsResponse = await fetch('/api/models');
-                    allModels = await modelsResponse.json();
-                }
-                
-                if (allPrompts.length === 0) {
-                    const promptsResponse = await fetch('/api/system_prompts');
-                    allPrompts = await promptsResponse.json();
-                }
-                
-                // Load patient's current settings
-                const response = await fetch(`/api/provider/settings?patient_id=${patientId}`);
-                const settings = await response.json();
-                
-                // Populate models checkboxes - default to all checked if no restrictions exist
-                const modelsDiv = document.getElementById('modelsCheckboxes');
-                const hasExistingSettings = settings.allowed_models && settings.allowed_models.length > 0;
-                
-                modelsDiv.innerHTML = allModels.map(model => `
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="model_${model.id}" value="${model.id}" 
-                            ${hasExistingSettings ? 
-                                (settings.allowed_models.includes(model.id) ? 'checked' : '') : 
-                                'checked'}>
-                        <label for="model_${model.id}">${model.name} (${model.provider})</label>
+                    <div class="stat-card">
+                        <div class="stat-number">${activeWindows.length}</div>
+                        <div class="stat-label">Active Windows</div>
                     </div>
-                `).join('');
-                
-                // Populate system prompts
-                const promptSelect = document.getElementById('systemPrompt');
-                promptSelect.innerHTML = '<option value="">Patient can choose</option>' +
-                    allPrompts.map(prompt => 
-                        `<option value="${prompt.id}" ${settings.system_prompt_id === prompt.id ? 'selected' : ''}>${prompt.name}</option>`
-                    ).join('');
-                
-                // Set other fields
-                document.getElementById('timeStart').value = settings.time_window_start || '';
-                document.getElementById('timeEnd').value = settings.time_window_end || '';
-                document.getElementById('maxMessages').value = settings.max_messages_per_day || '';
-                document.getElementById('customInstructions').value = settings.custom_instructions || '';
-                
+                    <div class="stat-card">
+                        <div class="stat-number">${windows.reduce((sum, w) => sum + (w.templates?.length || 0), 0)}</div>
+                        <div class="stat-label">Chat Templates</div>
+                    </div>
+                `;
             } catch (error) {
-                console.error('Error loading settings:', error);
+                console.error('Error loading stats:', error);
             }
         }
-        
-        async function saveSettings(event) {
-            event.preventDefault();
-            
-            if (!selectedPatientId) return;
-            
-            // Collect allowed models
-            const allowedModels = [];
-            document.querySelectorAll('#modelsCheckboxes input:checked').forEach(checkbox => {
-                allowedModels.push(parseInt(checkbox.value));
-            });
-            
-            const settings = {
-                patient_id: selectedPatientId,
-                allowed_models: allowedModels,
-                system_prompt_id: document.getElementById('systemPrompt').value ? parseInt(document.getElementById('systemPrompt').value) : null,
-                time_window_start: document.getElementById('timeStart').value || null,
-                time_window_end: document.getElementById('timeEnd').value || null,
-                max_messages_per_day: document.getElementById('maxMessages').value ? parseInt(document.getElementById('maxMessages').value) : null,
-                custom_instructions: document.getElementById('customInstructions').value || null
-            };
-            
-            try {
-                const response = await fetch('/api/provider/settings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(settings)
-                });
-                
-                if (response.ok) {
-                    alert('Settings saved successfully!');
-                } else {
-                    alert('Failed to save settings');
-                }
-            } catch (error) {
-                console.error('Error saving settings:', error);
-                alert('Error saving settings');
-            }
+
+        function viewPatientProgress() {
+            // For now, redirect to chat windows where they can see patient activity
+            window.location.href = '/provider/chat-windows';
         }
-        
-        function switchTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${tabName}Tab`).classList.add('active');
+
+        function manageSettings() {
+            alert('Settings management coming soon!');
         }
-        
-        function viewConversation(conversationId) {
-            window.open(`/conversation/${conversationId}`, '_blank');
-        }
-        
-        function viewPatientChats(event, patientId) {
-            event.stopPropagation();
-            selectPatient(patientId);
-            switchTab('conversations');
-        }
-        
-        function formatDate(timestamp) {
-            return new Date(timestamp * 1000).toLocaleDateString();
-        }
-        
-        function formatRelativeTime(timestamp) {
-            const now = Date.now() / 1000;
-            const diff = now - timestamp;
-            
-            if (diff < 3600) {
-                const mins = Math.floor(diff / 60);
-                return `${mins} min${mins !== 1 ? 's' : ''} ago`;
-            } else if (diff < 86400) {
-                const hours = Math.floor(diff / 3600);
-                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-            } else {
-                const days = Math.floor(diff / 86400);
-                return `${days} day${days !== 1 ? 's' : ''} ago`;
-            }
-        }
-        
+
         async function logout() {
             await fetch('/logout');
             window.location.href = '/login';
         }
-        
-        // Load patients on page load
-        loadPatients();
+
+        // Load stats on page load
+        loadStats();
     </script>
 </body>
 </html>
