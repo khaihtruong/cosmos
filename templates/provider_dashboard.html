@@ -56,6 +56,10 @@
             font-weight: 500;
         }
 
+        .logout-btn:hover {
+            background: #e73c3c;
+        }
+
         .container {
             max-width: 1200px;
             margin: 2rem auto;
@@ -243,8 +247,7 @@
         }
 
         function viewPatientProgress() {
-            // For now, redirect to chat windows where they can see patient activity
-            window.location.href = '/provider/chat-windows';
+            window.location.href = '/provider/patient-progress';
         }
 
         function manageSettings() {

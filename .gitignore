@@ -1,5 +1,47 @@
-# Testing Resources
-.venv/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Secrets/Keys
+# Virtual Environments
+.venv/
+venv/
 .env
+
+# Flask instance folder
+instance/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Environment variables
+.env
+.env.local
+
+# PDF/Report exports (optional - remove if you want to track them)
+*.pdf

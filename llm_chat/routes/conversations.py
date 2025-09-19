@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from ..extensions import db
 from ..models import (
     User, ProviderPatient, ProviderSettings, SystemPrompt,
-    Conversation, Model, Message, SavedSelection
+    Conversation, Model, Message, SavedSelection, ChatWindow
 )
 from ..services.llm_interface import LLMInterface
 
@@ -28,6 +28,11 @@ def user_dashboard():
 @login_required
 def new_conversation():
     return render_template("new_conversation.html")
+
+@conv_bp.route("/my-reports")
+@login_required
+def patient_reports():
+    return render_template("patient_reports.html")
 
 @conv_bp.route("/api/provider_settings")
 @login_required
@@ -66,7 +71,18 @@ def view_conversation(conversation_id):
     conversation = Conversation.query.get_or_404(conversation_id)
     if not current_user.can_access_patient(conversation.user_id):
         abort(403)
+
     can_send_messages = conversation.user_id == current_user.id
+
+    # Check if conversation belongs to an expired window
+    if conversation.window_id:
+        window = ChatWindow.query.get(conversation.window_id)
+        if window:
+            now = time.time()
+            # Can't send messages if window has ended or isn't active
+            if now > window.end_date or not window.is_active:
+                can_send_messages = False
+
     return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages)
 
 @conv_bp.route("/api/conversation/<int:conversation_id>")
@@ -189,6 +205,15 @@ def send_message(conversation_id):
     # Access check
     if conversation.user_id != current_user.id and not current_user.can_access_patient(conversation.user_id):
         abort(403)
+
+    # Check if conversation belongs to an expired window
+    if conversation.window_id:
+        window = ChatWindow.query.get(conversation.window_id)
+        if window:
+            now = time.time()
+            # Can't send messages if window has ended or isn't active
+            if now > window.end_date or not window.is_active:
+                return jsonify({'error': 'Chat window has expired or is no longer active'}), 403
 
     # Time window and limits for patients
     if current_user.is_patient():

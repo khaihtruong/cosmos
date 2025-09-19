@@ -37,6 +37,42 @@ def get_chat_windows():
 
     return jsonify(result)
 
+
+@window_bp.route("/<int:window_id>", methods=["GET"])
+@login_required
+def get_chat_window(window_id):
+    """Get detailed data for a specific window (for editing)"""
+    if not current_user.is_provider():
+        abort(403)
+
+    window = ChatWindow.query.get_or_404(window_id)
+
+    # Check if provider owns this window
+    if window.provider_id != current_user.id:
+        abort(403)
+
+    # Get templates for this window
+    templates = ChatTemplate.query.filter_by(window_id=window_id).order_by(ChatTemplate.order_index).all()
+
+    window_data = window.to_dict()
+    window_data['templates'] = [
+        {
+            'id': t.id,
+            'title': t.title,
+            'purpose': t.purpose,
+            'model_id': t.model_id,
+            'system_prompt_id': t.system_prompt_id,
+            'custom_system_prompt': t.custom_system_prompt,
+            'max_messages': t.max_messages,
+            'order_index': t.order_index
+        }
+        for t in templates
+    ]
+    window_data['report_config'] = window.get_report_config()
+
+    return jsonify(window_data)
+
+
 @window_bp.route("/current", methods=["GET"])
 @login_required
 def get_current_windows():
@@ -95,6 +131,12 @@ def create_chat_window():
     )
     db.session.add(window)
     db.session.flush()  # Get the ID without committing
+
+    # Handle report configuration
+    report_config = data.get('report_config')
+    if report_config:
+        window.set_report_config(report_config)
+        print(f"Report config for window {window.id}: {report_config}")
 
     # Create templates
     templates = data.get('templates', [])
@@ -161,6 +203,12 @@ def update_chat_window(window_id):
                 order_index=idx
             )
             db.session.add(template)
+
+    # Handle report configuration
+    report_config = data.get('report_config')
+    if report_config:
+        window.set_report_config(report_config)
+        print(f"Updated report config for window {window.id}: {report_config}")
 
     db.session.commit()
     return jsonify(window.to_dict())

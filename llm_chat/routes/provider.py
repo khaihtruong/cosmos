@@ -17,6 +17,11 @@ def provider_dashboard():
 def provider_chat_windows():
     return render_template("provider_chat_windows.html")
 
+@provider_bp.route("/provider/patient-progress")
+@role_required('provider', 'admin')
+def provider_patient_progress():
+    return render_template("provider_patient_progress.html")
+
 @provider_bp.route("/api/provider/patients")
 @role_required('provider', 'admin')
 def get_provider_patients():
