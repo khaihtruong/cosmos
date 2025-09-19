@@ -7,6 +7,17 @@ requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
 
+# PDF generation and system dependencies
+weasyprint==62.3
+# System dependencies for weasyprint (install via system package manager)
+# macOS: brew install pango libffi
+# Ubuntu/Debian: apt-get install libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
+# CentOS/RHEL: yum install pango libffi
+
+# NLP libraries for unified reports
+textblob==0.17.1
+spacy==3.7.2
+
 # LLM Provider SDKs (install only what you need)
 openai==1.35.0
 anthropic==0.25.0

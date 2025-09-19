@@ -9,6 +9,7 @@ from .routes.conversations import conv_bp
 from .routes.provider import provider_bp
 from .routes.admin import admin_bp
 from .routes.chat_windows import window_bp
+from .routes.reports import reports_bp
 from flask_smorest import Api
 
 # Load variables from .env
@@ -50,5 +51,13 @@ def create_app():
     app.register_blueprint(provider_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(window_bp)
+    app.register_blueprint(reports_bp)
+
+    # Initialize report scheduler
+    from .services.report_scheduler import report_scheduler
+    report_scheduler.init_app(app)
+    # Start scheduler when app context is available
+    with app.app_context():
+        report_scheduler.start()
 
     return app

@@ -74,6 +74,10 @@
             font-weight: 500;
         }
 
+        .logout-btn:hover {
+            background: #e73c3c;
+        }
+
         .container {
             max-width: 1400px;
             margin: 2rem auto;
@@ -151,7 +155,7 @@
 
         .management-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             background: white;
             border-radius: 12px;
@@ -487,6 +491,42 @@
             cursor: pointer;
             font-weight: 500;
         }
+
+        /* Checkbox Styles */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .checkbox-label:hover {
+            background: #e9ecef;
+            border-color: #4682B4;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-label span {
+            flex: 1;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -576,9 +616,91 @@
                     <button type="button" class="btn-add-template" onclick="addTemplateEditor()">+ Add Chat Template</button>
                 </div>
 
+                <div class="form-group">
+                    <label>Report Configuration</label>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Configure which components will be included in the automatic report generated when this window completes.</p>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="window_config_ai_summary" checked>
+                            <span>
+                                <strong>AI Summary</strong> - Intelligent analysis of conversation themes and progress
+                            </span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="window_config_saved_messages" checked>
+                            <span>
+                                <strong>Saved Messages</strong> - Important messages flagged during sessions
+                            </span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="window_config_descriptive_stats" checked>
+                            <span>
+                                <strong>Descriptive Statistics</strong> - Message counts, word counts, session duration
+                            </span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="window_config_nlp_analysis" checked>
+                            <span>
+                                <strong>NLP Analysis</strong> - Sentiment analysis and communication patterns
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn-primary">Save Window</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Configuration Modal -->
+    <div class="modal" id="reportConfigModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configure Enhanced Report</h2>
+                <button class="close-modal" onclick="closeReportConfigModal()">&times;</button>
+            </div>
+
+            <form id="reportConfigForm">
+                <div class="form-group">
+                    <label>Select Report Components:</label>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="config_ai_summary" checked>
+                            <span class="checkmark"></span>
+                            <strong>AI Summary</strong> - Intelligent analysis of conversation themes and progress
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="config_saved_messages" checked>
+                            <span class="checkmark"></span>
+                            <strong>Saved Messages</strong> - Important messages flagged during sessions
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="config_descriptive_stats" checked>
+                            <span class="checkmark"></span>
+                            <strong>Descriptive Statistics</strong> - Message counts, word counts, session duration
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="config_nlp_analysis" checked>
+                            <span class="checkmark"></span>
+                            <strong>NLP Analysis</strong> - Sentiment analysis and communication patterns
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeReportConfigModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Generate Enhanced Report</button>
                 </div>
             </form>
         </div>
@@ -689,6 +811,8 @@
                                 <div class="window-actions">
                                     <button class="btn-icon edit" onclick="editWindow(${window.id})" title="Edit">✏️</button>
                                     <button class="btn-icon delete" onclick="deleteWindow(${window.id})" title="Delete">🗑️</button>
+                                    ${!window.is_current && window.is_active ? `<button class="btn-icon" onclick="openReportConfigModal(${window.id})" title="Configure & Generate Enhanced Report">📊</button>` : ''}
+                                    ${!window.is_current && window.is_active ? `<button class="btn-icon" onclick="generateReport(${window.id})" title="Generate Basic Report">📄</button>` : ''}
                                 </div>
                             </div>
                             ${window.description ? `<div class="window-description">${window.description}</div>` : ''}
@@ -745,8 +869,88 @@
             document.getElementById('modalTitle').textContent = 'Create Chat Window';
             document.getElementById('windowForm').reset();
             document.getElementById('templatesEditor').innerHTML = '';
+
+            // Reset report configuration to defaults
+            document.getElementById('window_config_ai_summary').checked = true;
+            document.getElementById('window_config_saved_messages').checked = true;
+            document.getElementById('window_config_descriptive_stats').checked = true;
+            document.getElementById('window_config_nlp_analysis').checked = true;
+
             addTemplateEditor(); // Add one template by default
             document.getElementById('windowModal').classList.add('show');
+        }
+
+        async function editWindow(windowId) {
+            try {
+                // Load window data
+                const response = await fetch(`/api/windows/${windowId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load window data');
+                }
+
+                const windowData = await response.json();
+
+                // Set up the modal for editing
+                currentWindowId = windowId;
+                document.getElementById('modalTitle').textContent = 'Edit Chat Window';
+
+                // Populate form fields
+                document.getElementById('windowTitle').value = windowData.title || '';
+                document.getElementById('windowDescription').value = windowData.description || '';
+
+                // Format dates for datetime-local input
+                if (windowData.start_date) {
+                    const startDate = new Date(windowData.start_date * 1000);
+                    document.getElementById('startDate').value = formatDateTimeLocal(startDate);
+                }
+                if (windowData.end_date) {
+                    const endDate = new Date(windowData.end_date * 1000);
+                    document.getElementById('endDate').value = formatDateTimeLocal(endDate);
+                }
+
+                // Populate report configuration
+                const config = windowData.report_config || {};
+                document.getElementById('window_config_ai_summary').checked = config.ai_summary !== false;
+                document.getElementById('window_config_saved_messages').checked = config.saved_messages !== false;
+                document.getElementById('window_config_descriptive_stats').checked = config.descriptive_stats !== false;
+                document.getElementById('window_config_nlp_analysis').checked = config.nlp_analysis !== false;
+
+                // Clear and populate templates
+                document.getElementById('templatesEditor').innerHTML = '';
+
+                if (windowData.templates && windowData.templates.length > 0) {
+                    windowData.templates.forEach((template, index) => {
+                        addTemplateEditor();
+                        const templateEditor = document.querySelectorAll('.template-editor-item')[index];
+
+                        templateEditor.querySelector('.template-title-input').value = template.title || '';
+                        templateEditor.querySelector('.template-purpose-input').value = template.purpose || '';
+                        templateEditor.querySelector('.template-model-select').value = template.model_id || '';
+                        templateEditor.querySelector('.template-prompt-select').value = template.system_prompt_id || '';
+                        templateEditor.querySelector('.template-custom-prompt').value = template.custom_system_prompt || '';
+                    });
+                } else {
+                    // Add one empty template if none exist
+                    addTemplateEditor();
+                }
+
+                // Show the modal
+                document.getElementById('windowModal').classList.add('show');
+
+            } catch (error) {
+                console.error('Error loading window for edit:', error);
+                alert(`Failed to load window data: ${error.message}`);
+            }
+        }
+
+        function formatDateTimeLocal(date) {
+            // Format date to YYYY-MM-DDTHH:MM format for datetime-local input
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         function closeModal() {
@@ -813,13 +1017,22 @@
                 });
             });
 
+            // Get report configuration
+            const reportConfig = {
+                ai_summary: document.getElementById('window_config_ai_summary').checked,
+                saved_messages: document.getElementById('window_config_saved_messages').checked,
+                descriptive_stats: document.getElementById('window_config_descriptive_stats').checked,
+                nlp_analysis: document.getElementById('window_config_nlp_analysis').checked
+            };
+
             const windowData = {
                 patient_id: currentPatient.id,
                 title: document.getElementById('windowTitle').value,
                 description: document.getElementById('windowDescription').value,
                 start_date: new Date(document.getElementById('startDate').value).getTime() / 1000,
                 end_date: new Date(document.getElementById('endDate').value).getTime() / 1000,
-                templates: templates
+                templates: templates,
+                report_config: reportConfig
             };
 
             try {
@@ -870,6 +1083,116 @@
         function formatDate(timestamp) {
             return new Date(timestamp * 1000).toLocaleDateString();
         }
+
+        async function generateReport(windowId) {
+            if (!confirm('Generate a basic report for this completed window?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/reports/window/${windowId}/generate`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate report');
+                }
+
+                const report = await response.json();
+                alert('Basic report generated successfully!');
+
+                // Refresh the windows to update the UI
+                loadWindows(currentPatient.id);
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert(`Failed to generate report: ${error.message}`);
+            }
+        }
+
+        let currentReportWindowId = null;
+
+        async function openReportConfigModal(windowId) {
+            currentReportWindowId = windowId;
+
+            try {
+                // Load current configuration for this window
+                const response = await fetch(`/api/reports/window/${windowId}/config`);
+                if (response.ok) {
+                    const config = await response.json();
+
+                    // Set checkbox states
+                    document.getElementById('config_ai_summary').checked = config.ai_summary !== false;
+                    document.getElementById('config_saved_messages').checked = config.saved_messages !== false;
+                    document.getElementById('config_descriptive_stats').checked = config.descriptive_stats !== false;
+                    document.getElementById('config_nlp_analysis').checked = config.nlp_analysis !== false;
+                }
+            } catch (error) {
+                console.error('Error loading report config:', error);
+                // Use defaults if loading fails
+                document.getElementById('config_ai_summary').checked = true;
+                document.getElementById('config_saved_messages').checked = true;
+                document.getElementById('config_descriptive_stats').checked = true;
+                document.getElementById('config_nlp_analysis').checked = true;
+            }
+
+            document.getElementById('reportConfigModal').classList.add('show');
+        }
+
+        function closeReportConfigModal() {
+            document.getElementById('reportConfigModal').classList.remove('show');
+            currentReportWindowId = null;
+        }
+
+        document.getElementById('reportConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentReportWindowId) {
+                alert('No window selected');
+                return;
+            }
+
+            const config = {
+                ai_summary: document.getElementById('config_ai_summary').checked,
+                saved_messages: document.getElementById('config_saved_messages').checked,
+                descriptive_stats: document.getElementById('config_descriptive_stats').checked,
+                nlp_analysis: document.getElementById('config_nlp_analysis').checked
+            };
+
+            try {
+                // Save configuration
+                await fetch(`/api/reports/window/${currentReportWindowId}/config`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ config })
+                });
+
+                // Generate enhanced report
+                const response = await fetch(`/api/reports/window/${currentReportWindowId}/generate-enhanced`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ config })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate enhanced report');
+                }
+
+                const report = await response.json();
+                alert('Enhanced report generated successfully!');
+
+                closeReportConfigModal();
+                loadWindows(currentPatient.id);
+            } catch (error) {
+                console.error('Error generating enhanced report:', error);
+                alert(`Failed to generate enhanced report: ${error.message}`);
+            }
+        });
 
         async function logout() {
             await fetch('/logout');

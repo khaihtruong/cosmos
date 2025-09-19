@@ -1,4 +1,5 @@
 import time
+import json
 from ..extensions import db
 
 class ChatWindow(db.Model):
@@ -16,6 +17,9 @@ class ChatWindow(db.Model):
     created_at = db.Column(db.Float, default=lambda: time.time())
     updated_at = db.Column(db.Float, onupdate=lambda: time.time())
 
+    # Report configuration (JSON string storing enabled components)
+    report_config = db.Column(db.Text, default='{"ai_summary": true, "saved_messages": true, "descriptive_stats": true, "nlp_analysis": true}')
+
     # Relationships
     patient = db.relationship('User', foreign_keys=[patient_id], backref='chat_windows')
     provider = db.relationship('User', foreign_keys=[provider_id])
@@ -26,6 +30,17 @@ class ChatWindow(db.Model):
         """Check if this window is currently active based on date"""
         now = time.time()
         return self.is_active and self.start_date <= now <= self.end_date
+
+    def get_report_config(self):
+        """Get report configuration as dict"""
+        try:
+            return json.loads(self.report_config or '{}')
+        except:
+            return {"ai_summary": True, "saved_messages": True, "descriptive_stats": True, "nlp_analysis": True}
+
+    def set_report_config(self, config):
+        """Set report configuration from dict"""
+        self.report_config = json.dumps(config)
 
     def to_dict(self):
         return {

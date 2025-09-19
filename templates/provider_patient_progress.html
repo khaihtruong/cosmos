@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Progress - Provider Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .nav-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: #e73c3c;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Patient Selection */
+        .patient-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .patient-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            border-color: #4682B4;
+        }
+
+        .patient-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .patient-email {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .patient-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        /* Progress View */
+        .progress-view {
+            display: none;
+        }
+
+        .patient-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .patient-header h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 0.75rem 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .tab.active {
+            color: #4682B4;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #4682B4;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Reports Section */
+        .reports-list {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .report-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .report-summary {
+            padding: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4682B4;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .btn-view-report {
+            padding: 0.5rem 1rem;
+            background: #4682B4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-view-report:hover {
+            background: #357abd;
+        }
+
+        /* Report Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Report HTML Content Styles */
+        .report-container h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .details-table th {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .details-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .btn-back {
+            padding: 0.5rem 1rem;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .btn-back:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Patient Progress</h1>
+        <div class="user-info">
+            <span class="role-badge">Provider</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Patient Selection View -->
+        <div id="patientSelectionView">
+            <h2 style="margin-bottom: 1.5rem;">Select a Patient to View Progress</h2>
+            <div class="patient-selection" id="patientGrid">
+                <!-- Patients will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Progress View -->
+        <div class="progress-view" id="progressView">
+            <button class="btn-back" onclick="showPatientSelection()">← Back to Patients</button>
+
+            <div class="patient-header">
+                <h2 id="patientName">Patient Name</h2>
+                <p id="patientEmail" style="color: #666;">patient@email.com</p>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('reports')">Reports</button>
+                    <button class="tab" onclick="showTab('active-windows')">Active Windows</button>
+                    <button class="tab" onclick="showTab('conversations')">Recent Conversations</button>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content active" id="reports-tab">
+                <h3>Window Completion Reports</h3>
+                <div class="reports-list" id="reportsList">
+                    <!-- Reports will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Active Windows Tab -->
+            <div class="tab-content" id="active-windows-tab">
+                <h3>Currently Active Windows</h3>
+                <div id="activeWindowsList">
+                    <!-- Active windows will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Conversations Tab -->
+            <div class="tab-content" id="conversations-tab">
+                <h3>Recent Conversations</h3>
+                <div id="conversationsList">
+                    <!-- Recent conversations will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Details Modal -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report Details</h2>
+                <button class="close-modal" onclick="closeReportModal()">&times;</button>
+            </div>
+            <div id="reportContent">
+                <!-- Report content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let patients = [];
+        let currentPatient = null;
+
+        async function loadPatients() {
+            try {
+                const response = await fetch('/api/provider/patients');
+                patients = await response.json();
+                displayPatients();
+            } catch (error) {
+                console.error('Error loading patients:', error);
+            }
+        }
+
+        function displayPatients() {
+            const grid = document.getElementById('patientGrid');
+            grid.innerHTML = patients.map(patient => `
+                <div class="patient-card" onclick="selectPatient(${patient.id})">
+                    <div class="patient-name">${patient.username}</div>
+                    <div class="patient-email">${patient.email}</div>
+                    <div class="patient-stats">
+                        <span>Conversations: ${patient.conversation_count}</span>
+                        <span>Last Active: ${patient.last_active ? formatDate(patient.last_active) : 'Never'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectPatient(patientId) {
+            currentPatient = patients.find(p => p.id === patientId);
+            if (!currentPatient) return;
+
+            // Update header
+            document.getElementById('patientName').textContent = currentPatient.username;
+            document.getElementById('patientEmail').textContent = currentPatient.email;
+
+            // Switch views
+            document.getElementById('patientSelectionView').style.display = 'none';
+            document.getElementById('progressView').style.display = 'block';
+
+            // Load patient data
+            await loadPatientReports(patientId);
+            await loadActiveWindows(patientId);
+        }
+
+        function showPatientSelection() {
+            document.getElementById('patientSelectionView').style.display = 'block';
+            document.getElementById('progressView').style.display = 'none';
+            currentPatient = null;
+        }
+
+        async function loadPatientReports(patientId) {
+            try {
+                const response = await fetch(`/api/reports/patient/${patientId}`);
+                const reports = await response.json();
+                displayReports(reports);
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+
+        function displayReports(reports) {
+            const list = document.getElementById('reportsList');
+
+            if (reports.length === 0) {
+                list.innerHTML = '<div class="empty-state">No reports available yet</div>';
+                return;
+            }
+
+            list.innerHTML = reports.map(report => {
+                const data = report.report_data;
+                return `
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-title">${data.window_title}</div>
+                            <div class="report-meta">
+                                Generated: ${formatDateTime(report.generated_at)} |
+                                Period: ${formatDate(data.start_date)} - ${formatDate(data.end_date)}
+                            </div>
+                        </div>
+                        <div class="report-summary">
+                            <div class="stats-grid">
+                                <div class="stat">
+                                    <span class="stat-value">${data.summary.total_conversations}</span>
+                                    <span class="stat-label">Conversations</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-value">${data.summary.total_user_messages}</span>
+                                    <span class="stat-label">User Messages</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-value">${data.summary.total_model_messages}</span>
+                                    <span class="stat-label">AI Responses</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-value">${data.summary.average_messages_per_chat.toFixed(1)}</span>
+                                    <span class="stat-label">Avg Messages</span>
+                                </div>
+                            </div>
+                            <button class="btn-view-report" onclick="viewReport(${report.id})">View Full Report</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadActiveWindows(patientId) {
+            try {
+                const response = await fetch(`/api/windows?patient_id=${patientId}`);
+                const windows = await response.json();
+
+                const now = Date.now() / 1000;
+                const activeWindows = windows.filter(w => w.is_active && w.is_current);
+
+                const list = document.getElementById('activeWindowsList');
+                if (activeWindows.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No active windows</div>';
+                } else {
+                    list.innerHTML = `<div class="reports-list">` + activeWindows.map(window => {
+                        const startDate = new Date(window.start_date * 1000).toLocaleDateString();
+                        const endDate = new Date(window.end_date * 1000).toLocaleDateString();
+
+                        return `
+                        <div class="report-card">
+                            <div class="report-header">
+                                <div class="report-title">${window.title}</div>
+                                <div class="report-meta">
+                                    Period: ${startDate} - ${endDate} |
+                                    Status: <span style="color: #155724; font-weight: 600;">Active</span>
+                                </div>
+                            </div>
+                            <div class="report-summary">
+                                ${window.description ? `<p style="margin-bottom: 1rem;">${window.description}</p>` : ''}
+
+                                <div class="stats-grid">
+                                    <div class="stat">
+                                        <span class="stat-value">${window.templates ? window.templates.length : 0}</span>
+                                        <span class="stat-label">Chat Templates</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-value">${Math.ceil((window.end_date - now) / 86400)}</span>
+                                        <span class="stat-label">Days Remaining</span>
+                                    </div>
+                                </div>
+
+                                ${window.templates && window.templates.length > 0 ? `
+                                    <div style="margin-top: 1.5rem;">
+                                        <h4 style="margin-bottom: 0.75rem; color: #333;">Configured Chats:</h4>
+                                        <div style="display: grid; gap: 0.5rem;">
+                                            ${window.templates.map(t => `
+                                                <div style="padding: 0.75rem; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #4682B4;">
+                                                    <strong>${t.title}</strong>
+                                                    ${t.purpose ? `<div style="color: #666; font-size: 0.9rem; margin-top: 0.25rem;">${t.purpose}</div>` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    }).join('') + `</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading windows:', error);
+            }
+        }
+
+        async function viewReport(reportId) {
+            try {
+                const response = await fetch(`/api/reports/html/${reportId}`);
+                const data = await response.json();
+
+                document.getElementById('reportContent').innerHTML = data.html;
+                document.getElementById('reportModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading report:', error);
+            }
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('show');
+        }
+
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp * 1000).toLocaleDateString();
+        }
+
+        function formatDateTime(timestamp) {
+            return new Date(timestamp * 1000).toLocaleString();
+        }
+
+        async function logout() {
+            await fetch('/logout');
+            window.location.href = '/login';
+        }
+
+        // Load patients on page load
+        loadPatients();
+    </script>
+</body>
+</html>
