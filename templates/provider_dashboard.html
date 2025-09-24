@@ -1,266 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provider Dashboard - LLM Chat</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Provider Dashboard</title>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eef6ff', 600:'#6366f1' }
+          }
         }
-
-        .header {
-            background: white;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            color: #333;
-            font-size: 1.5rem;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .role-badge {
-            padding: 0.25rem 0.75rem;
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .logout-btn {
-            padding: 0.5rem 1rem;
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .logout-btn:hover {
-            background: #e73c3c;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .welcome-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .welcome-section h2 {
-            color: #333;
-            margin-bottom: 1rem;
-        }
-
-        .welcome-section p {
-            color: #666;
-            margin-bottom: 2rem;
-        }
-
-        .action-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .action-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .action-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-
-        .action-card .icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .action-card h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .action-card p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(70, 130, 180, 0.4);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #4682B4;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-        }
-    </style>
+      }
+    }
+  </script>
 </head>
-<body>
-    <div class="header">
-        <h1>Provider Dashboard</h1>
-        <div class="user-info">
-            <span class="role-badge">Provider</span>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="flex min-h-screen">
+    
+    <!-- Sidebar -->
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full border-r border-slate-200 bg-white px-3 py-4 transition-transform lg:static lg:translate-x-0">
+
+      <!-- Can drop logo here if we ever need one?  -->
+      <div class="mb-4 flex items-center gap-2 px-3">
+        <!-- <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600"></div> -->
+        <span class="font-semibold">Provider</span>
+      </div>
+
+      <!-- Nav -->
+      <nav class="space-y-6 overflow-y-auto px-1">
+        <div>
+          <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pages</p>
+          <ul class="space-y-1">
+            <li>
+              <a href="/provider/dashboard"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-800 bg-indigo-50 ring-1 ring-inset ring-indigo-100">
+                <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                </svg>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="/provider/chat-windows"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M8 10h8M8 14h5"/><path d="M21 12a8.5 8.5 0 01-1.6 5l.6 3-3-1a8.5 8.5 0 11-2-14.5"/>
+                </svg>
+                <span>Chat Windows</span>
+              </a>
+            </li>
+            <li>
+              <a href="/provider/patient-progress"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M4 19V5m4 14V9m4 10V7m4 12V4"/>
+                </svg>
+                <span>Patient Progress</span>
+              </a>
+            </li>
+            <li>
+              <a href="/provider/settings"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M10 6h4l1 2 2 1v4l-2 1-1 2h-4l-1-2-2-1V9l2-1 1-2z"/><circle cx="12" cy="12" r="2.5"/>
+                </svg>
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
         </div>
+      </nav>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 z-30 hidden bg-black/30 lg:hidden"></div>
+
+    <!-- Main column -->
+    <div class="flex-1 min-w-0 flex flex-col">
+
+      <!-- Top bar -->
+      <header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur">
+
+        <!-- Mobile menu button -->
+        <button id="menuBtn" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 lg:hidden">
+          <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <span class="text-sm">Menu</span>
+        </button>
+
+        <!-- Page title -->
+        <h1 class="text-lg font-semibold">Dashboard</h1>
+
+        <!-- Right: text + logout -->
+        <div class="ml-auto flex items-center gap-3">
+          <button onclick="logout()"
+                  class="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="w-full p-6">
+
+        <!-- Welcome -->
+        <section class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <h2 class="mb-1 text-xl font-semibold">Welcome to the Provider Dashboard</h2>
+          <p class="text-slate-600">Manage your patients' chat sessions and therapeutic conversations</p>
+        </section>
+
+        <!-- Stats grid (May add more visualization here?) -->
+        <section id="statsGrid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        </section>
+
+        <!-- Recent Report -->
+        <section class="mt-6 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
+          <div class="border-b border-slate-100 px-6 py-4">
+            <h3 class="text-lg font-semibold">Recent Report</h3>
+          </div>
+
+          <div class="px-6 py-4">
+            <div class="mb-3 rounded-md bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Past week
+            </div>
+            <ul id="recentList" role="list" class="divide-y divide-slate-100">
+
+            </ul>
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
 
-    <div class="container">
-        <div class="welcome-section">
-            <h2>Welcome to the Provider Dashboard</h2>
-            <p>Manage your patients' chat sessions and therapeutic conversations</p>
-        </div>
+  <script>
+    // Mobile sidebar toggle + overlay
+    const menuBtn  = document.getElementById('menuBtn');
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('overlay');
 
-        <div class="stats-grid" id="statsGrid">
-            <!-- Stats will be loaded here -->
-        </div>
+    const openSide  = () => { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+    const closeSide = () => { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
 
-        <div class="action-cards">
-            <div class="action-card" onclick="window.location.href='/provider/chat-windows'">
-                <div class="icon">🗨️</div>
-                <h3>Manage Chat Windows</h3>
-                <p>Create and configure time-bounded chat sessions for your patients</p>
-                <a href="/provider/chat-windows" class="btn-primary">Manage Windows</a>
-            </div>
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        const open = sidebar.classList.contains('-translate-x-full');
+        open ? openSide() : closeSide();
+      });
+      overlay.addEventListener('click', closeSide);
 
-            <div class="action-card" onclick="viewPatientProgress()">
-                <div class="icon">📊</div>
-                <h3>View Patient Progress</h3>
-                <p>Monitor patient conversations and therapeutic progress</p>
-                <button class="btn-primary" onclick="viewPatientProgress()">View Progress</button>
-            </div>
+      if (window.innerWidth >= 1024) sidebar.classList.remove('-translate-x-full');
+    }
 
-            <div class="action-card" onclick="manageSettings()">
-                <div class="icon">⚙️</div>
-                <h3>Settings & Preferences</h3>
-                <p>Configure global settings and therapeutic guidelines</p>
-                <button class="btn-primary" onclick="manageSettings()">Settings</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        async function loadStats() {
-            try {
-                const patientsResponse = await fetch('/api/provider/patients');
-                const patients = await patientsResponse.json();
-
-                const windowsResponse = await fetch('/api/windows/');
-                const windows = await windowsResponse.json();
-
-                const activeWindows = windows.filter(w => w.is_current);
-
-                const statsGrid = document.getElementById('statsGrid');
-                statsGrid.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-number">${patients.length}</div>
-                        <div class="stat-label">Total Patients</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${windows.length}</div>
-                        <div class="stat-label">Chat Windows</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${activeWindows.length}</div>
-                        <div class="stat-label">Active Windows</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${windows.reduce((sum, w) => sum + (w.templates?.length || 0), 0)}</div>
-                        <div class="stat-label">Chat Templates</div>
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
+    (function markActive() {
+      const path = location.pathname.replace(/\/+$/, '');
+      document.querySelectorAll('aside a[href]').forEach(a => {
+        const href = a.getAttribute('href').replace(/\/+$/, '');
+        if (href === path || (href !== '/' && path.startsWith(href))) {
+          a.classList.add('bg-indigo-50','ring-1','ring-indigo-100','text-slate-800');
+          const icon = a.querySelector('svg'); if (icon) icon.classList.add('text-indigo-600');
         }
+      });
+    })();
 
-        function viewPatientProgress() {
-            window.location.href = '/provider/patient-progress';
-        }
+    // Stats
+    async function loadStats() {
+      try {
+        const patients = await (await fetch('/api/provider/patients')).json();
+        const windows  = await (await fetch('/api/windows/')).json();
+        const active   = windows.filter(w => w.is_current);
+        const templates= windows.reduce((s,w)=> s + (w.templates?.length || 0), 0);
 
-        function manageSettings() {
-            alert('Settings management coming soon!');
-        }
+        const card = (label, value) => `
+          <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+            <div class="text-2xl font-bold text-indigo-600">${value}</div>
+            <div class="text-sm text-slate-600">${label}</div>
+          </div>`;
 
-        async function logout() {
-            await fetch('/logout');
-            window.location.href = '/login';
-        }
+        document.getElementById('statsGrid').innerHTML =
+          card('Total Patients', patients.length) +
+          card('Chat Windows', windows.length) +
+          card('Active Windows', active.length) +
+          card('Chat Templates', templates);
+      } catch (e) { console.error('Error loading stats:', e); }
+    }
 
-        // Load stats on page load
-        loadStats();
-    </script>
+    // Recent report 
+    function renderRecentReports() {
+      const reports = [
+        { user: 'User 1', color: 'bg-violet-500', href: '/provider/chat-windows' },
+        { user: 'User 2', color: 'bg-violet-500', href: '#' },
+        { user: 'User 3', color: 'bg-violet-500', href: '#' },
+        { user: 'User 4', color: 'bg-violet-500', href: '#' },
+      ];
+
+      const icon = `
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M7 3h6l4 4v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+          <path d="M13 3v5h5"/>
+        </svg>`;
+
+      const html = reports.map(r => `
+        <li class="flex items-center gap-4 py-4">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full ${r.color} text-white">
+            ${icon}
+          </span>
+          <p class="flex-1 text-slate-700">
+            <span class="font-semibold">Report</span> for <span class="font-semibold">${r.user}</span> is
+            <span class="font-semibold text-slate-900">ready</span>
+          </p>
+          <a href="${r.href}" class="inline-flex items-center gap-1 font-medium text-violet-600 hover:text-violet-700">
+            View
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </li>
+      `).join('');
+
+      document.getElementById('recentList').innerHTML = html;
+    }
+
+    async function logout(){ await fetch('/logout'); window.location.href='/login'; }
+
+    loadStats();
+    renderRecentReports();
+  </script>
 </body>
 </html>
