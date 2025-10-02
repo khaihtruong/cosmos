@@ -1,391 +1,473 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Chat Sessions - LLM Chat</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Chat Sessions - LLM Chat</title>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef6ff', 600: '#6366f1' }
+          }
         }
-
-        .header {
-            background: white;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            color: #333;
-            font-size: 1.5rem;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logout-btn {
-            padding: 0.5rem 1rem;
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .window-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .window-header {
-            border-bottom: 2px solid #e8f5e9;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .window-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .window-meta {
-            display: flex;
-            gap: 2rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .window-description {
-            color: #555;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-
-        .chat-templates {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .template-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 1.5rem;
-            transition: all 0.3s;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .template-card:hover {
-            border-color: #4682B4;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .template-card.has-conversation {
-            border-color: #4CAF50;
-            background: #f1f8f4;
-        }
-
-        .template-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .template-purpose {
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 1rem;
-        }
-
-        .template-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .model-badge {
-            padding: 0.25rem 0.75rem;
-            background: #e3f2fd;
-            color: #1976d2;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .template-action {
-            padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-
-        .template-action:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(70, 130, 180, 0.4);
-        }
-
-        .template-action.continue {
-            background: #4CAF50;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #666;
-        }
-
-        .empty-state h2 {
-            color: #333;
-            margin-bottom: 1rem;
-        }
-
-        .date-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            background: #fff3cd;
-            color: #856404;
-            border-radius: 20px;
-            font-size: 0.85rem;
-        }
-
-        .date-indicator.active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .existing-conversations {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 2px solid #e0e0e0;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-    </style>
+      }
+    };
+  </script>
 </head>
-<body>
-    <div class="header">
-        <h1>My Chat Sessions</h1>
-        <div class="user-info">
-            <a href="/my-reports" style="padding: 0.5rem 1rem; background: #4CAF50; color: white; border-radius: 6px; text-decoration: none; font-weight: 500; margin-right: 1rem;">View My Reports</a>
-            <span id="username">Welcome, User</span>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full border-r border-slate-200 bg-white px-3 py-4 transition-transform lg:static lg:translate-x-0">
+      <div class="mb-4 flex items-center gap-2 px-3">
+        <span class="text-med text-brand-600 sm:inline">
+          Welcome, {{ current_user.username }}
+        </span>
+
+      </div>
+
+      <nav class="space-y-6 overflow-y-auto px-1">
+        <div>
+          <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pages</p>
+          <ul class="space-y-1">
+            <li>
+              <a href="/dashboard"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                </svg>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="/chat-windows"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M8 10h8M8 14h5"/><path d="M21 12a8.5 8.5 0 01-1.6 5l.6 3-3-1a8.5 8.5 0 11-2-14.5"/>
+                </svg>
+                <span>Chat Sessions</span>
+              </a>
+            </li>
+            <li>
+              <a href="/my-reports"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M5 4h14M5 8h14M5 12h7M5 16h7M5 20h14"/>
+                </svg>
+                <span>Reports</span>
+              </a>
+            </li>
+            <li>
+              <button type="button"
+                      onclick="toggleSelections()"
+                      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-600 transition hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M6 4h12a1 1 0 011 1v16l-7-3-7 3V5a1 1 0 011-1z"/>
+                </svg>
+                <span>Saved Selections</span>
+              </button>
+            </li>
+            <li>
+              <a href="/settings"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M10 6h4l1 2 2 1v4l-2 1-1 2h-4l-1-2-2-1V9l2-1 1-2z"/><circle cx="12" cy="12" r="2.5"/>
+                </svg>
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
         </div>
+      </nav>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 z-30 hidden bg-black/30 lg:hidden"></div>
+
+    <!-- Main column -->
+    <div class="flex min-w-0 flex-1 flex-col">
+
+      <!-- Top bar -->
+      <header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur">
+        <button id="menuBtn"
+                class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 lg:hidden">
+          <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <span class="text-sm">Menu</span>
+        </button>
+
+        <h1 class="text-lg font-semibold">Chat Sessions</h1>
+
+        <div class="ml-auto flex items-center gap-3">
+          <button onclick="logout()"
+                  class="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="w-full p-6 space-y-6">
+        <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <h2 class="mb-1 text-xl font-semibold">Active chat programs</h2>
+          <p class="text-sm text-slate-600">
+            Review any clinician-assigned windows below. Start a template when you’re ready or resume an in-progress chat.
+          </p>
+        </section>
+
+        <section class="space-y-6">
+          <div id="windowsContainer" class="hidden space-y-6">
+            <!-- Windows injected here -->
+          </div>
+
+          <div id="emptyState"
+               class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-600">
+            <h3 class="mb-2 text-lg font-semibold text-slate-800">No Active Chat Sessions</h3>
+            <p>Your clinician will set up chat sessions for you when needed. Please check back later or contact your provider if this seems unexpected.</p>
+          </div>
+        </section>
+
+        <section id="existingConversations"
+                 class="hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900">Previous Conversations</h3>
+          </div>
+          <div id="conversationsList" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <!-- Existing conversations injected here -->
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
 
-    <div class="container">
-        <div id="windowsContainer">
-            <!-- Chat windows will be loaded here -->
-        </div>
+  <!-- Saved selections overlay -->
+  <div id="selectionsOverlay" class="fixed inset-0 z-30 hidden bg-black/20"></div>
 
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <h2>No Active Chat Sessions</h2>
-            <p>Your clinician will set up chat sessions for you when needed.</p>
-            <p>Please check back later or contact your provider if you believe this is an error.</p>
-        </div>
-
-        <div class="existing-conversations" id="existingConversations" style="display: none;">
-            <h2 class="section-title">Previous Conversations</h2>
-            <div id="conversationsList">
-                <!-- Previous conversations will be loaded here -->
-            </div>
-        </div>
+  <aside id="selectionsSidebar"
+         class="fixed inset-y-0 right-0 z-40 w-full max-w-md translate-x-full transform border-l border-slate-200 bg-white shadow-xl transition-transform duration-200 ease-out">
+    <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+      <h3 class="text-base font-semibold text-slate-800">Saved Selections</h3>
+      <button type="button"
+              onclick="toggleSelections()"
+              class="rounded-md p-1 text-slate-500 transition hover:text-slate-700">
+        <span class="sr-only">Close</span>
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M6 6l12 12M6 18L18 6"/>
+        </svg>
+      </button>
     </div>
+    <div id="selectionsContent" class="divide-y divide-slate-100">
+      <!-- Saved selections injected -->
+    </div>
+  </aside>
 
-    <script>
-        let currentWindows = [];
-        let conversations = [];
+  <button type="button"
+          onclick="toggleSelections()"
+          class="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
+    <span class="sr-only">Toggle saved selections</span>
+    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="M5 5h9l5 5v9a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/>
+      <path d="M14 5v4h4"/>
+    </svg>
+  </button>
 
-        async function loadChatWindows() {
-            try {
-                const response = await fetch('/api/windows/current');
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    throw new Error('Failed to load chat windows');
-                }
+  <script>
+    // Mobile sidebar toggle
+    const menuBtn  = document.getElementById('menuBtn');
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('overlay');
 
-                currentWindows = await response.json();
-                displayWindows();
-            } catch (error) {
-                console.error('Error loading chat windows:', error);
-            }
+    const openSide  = () => { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); };
+    const closeSide = () => { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); };
+
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        const closed = sidebar.classList.contains('-translate-x-full');
+        closed ? openSide() : closeSide();
+      });
+      overlay.addEventListener('click', closeSide);
+      if (window.innerWidth >= 1024) sidebar.classList.remove('-translate-x-full');
+    }
+
+    // Highlight active nav link
+    (function markActive() {
+      const path = location.pathname.replace(/\/+$/, '');
+      document.querySelectorAll('aside a[href]').forEach(a => {
+        const href = a.getAttribute('href').replace(/\/+$/, '');
+        if (href && (href === path || (href !== '/' && path.startsWith(href)))) {
+          a.classList.add('bg-indigo-50', 'ring-1', 'ring-indigo-100', 'text-slate-800');
+          const icon = a.querySelector('svg'); if (icon) icon.classList.add('text-indigo-600');
         }
+      });
+    })();
 
-        function displayWindows() {
-            const container = document.getElementById('windowsContainer');
-            const emptyState = document.getElementById('emptyState');
+    function escapeHtml(s = '') {
+      return s.replace(/[&<>"'`=\\/]/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+        "'": '&#39;', '`': '&#96;', '=': '&#61;', '/': '&#47;'
+      }[ch] || ch));
+    }
 
-            if (currentWindows.length === 0) {
-                container.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
+    function formatMultiline(text) {
+      return escapeHtml(text || '').replace(/\n/g, '<br/>');
+    }
 
-            container.style.display = 'block';
-            emptyState.style.display = 'none';
+    let currentWindows = [];
+    let conversations = [];
 
-            container.innerHTML = currentWindows.map(window => {
-                const startDate = new Date(window.start_date * 1000);
-                const endDate = new Date(window.end_date * 1000);
-                const now = Date.now() / 1000;
-                const isActive = window.is_current;
-
-                return `
-                    <div class="window-card">
-                        <div class="window-header">
-                            <div class="window-title">${window.title}</div>
-                            <div class="window-meta">
-                                <span class="date-indicator ${isActive ? 'active' : ''}">
-                                    ${isActive ? '🟢 Active' : '⏰ Scheduled'}
-                                </span>
-                                <span>📅 ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                        ${window.description ? `<div class="window-description">${window.description}</div>` : ''}
-                        <div class="chat-templates">
-                            ${window.templates.map(template => `
-                                <div class="template-card ${template.has_conversation ? 'has-conversation' : ''}"
-                                     onclick="handleTemplateClick(${template.id}, ${template.conversation_id || 'null'})">
-                                    <div class="template-title">${template.title}</div>
-                                    ${template.purpose ? `<div class="template-purpose">${template.purpose}</div>` : ''}
-                                    <div class="template-meta">
-                                        <span class="model-badge">${template.model}</span>
-                                        <button class="template-action ${template.has_conversation ? 'continue' : ''}">
-                                            ${template.has_conversation ? 'Continue' : 'Start'}
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function handleTemplateClick(templateId, conversationId) {
-            if (conversationId) {
-                // Open existing conversation
-                window.location.href = `/conversation/${conversationId}`;
-            } else {
-                // Start new conversation from template
-                try {
-                    const response = await fetch('/api/windows/start_conversation', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            template_id: templateId
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to start conversation');
-                    }
-
-                    const data = await response.json();
-                    window.location.href = `/conversation/${data.id}`;
-                } catch (error) {
-                    console.error('Error starting conversation:', error);
-                    alert('Failed to start conversation. Please try again.');
-                }
-            }
-        }
-
-        async function loadExistingConversations() {
-            try {
-                const response = await fetch('/api/conversations');
-                conversations = await response.json();
-
-                // Filter out conversations that are part of current windows
-                const windowConvIds = currentWindows.flatMap(w =>
-                    w.templates.filter(t => t.conversation_id).map(t => t.conversation_id)
-                );
-
-                const oldConversations = conversations.filter(c => !windowConvIds.includes(c.id));
-
-                if (oldConversations.length > 0) {
-                    const existingSection = document.getElementById('existingConversations');
-                    const list = document.getElementById('conversationsList');
-
-                    existingSection.style.display = 'block';
-                    list.innerHTML = oldConversations.map(conv => `
-                        <div class="template-card" onclick="window.location.href='/conversation/${conv.id}'">
-                            <div class="template-title">${conv.title}</div>
-                            <div class="template-meta">
-                                <span class="model-badge">${conv.model}</span>
-                                <span>${formatDate(conv.updated_at)}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-            }
-        }
-
-        function formatDate(timestamp) {
-            return new Date(timestamp * 1000).toLocaleDateString();
-        }
-
-        async function logout() {
-            await fetch('/logout');
+    async function loadChatWindows() {
+      try {
+        const response = await fetch('/api/windows/current');
+        if (!response.ok) {
+          if (response.status === 401) {
             window.location.href = '/login';
+            return;
+          }
+          throw new Error('Failed to load chat windows');
+        }
+        currentWindows = await response.json();
+        displayWindows();
+      } catch (error) {
+        console.error('Error loading chat windows:', error);
+      }
+    }
+
+    function displayWindows() {
+      const container = document.getElementById('windowsContainer');
+      const emptyState = document.getElementById('emptyState');
+
+      if (!currentWindows.length) {
+        container.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        container.innerHTML = '';
+        return;
+      }
+
+      container.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = currentWindows.map(window => {
+        const isActive = Boolean(window.is_current);
+        const statusLabel = isActive ? '🟢 Active' : '⏰ Scheduled';
+        const statusClasses = isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
+        const dateRange = escapeHtml(formatDateRange(window.start_date, window.end_date));
+        const descriptionHtml = window.description
+          ? `<p class="mt-3 text-sm leading-6 text-slate-600">${formatMultiline(window.description)}</p>`
+          : '';
+
+        const templates = Array.isArray(window.templates) ? window.templates : [];
+        const templatesHtml = templates.length
+          ? templates.map(template => {
+              const hasConversation = Boolean(template.has_conversation);
+              const buttonLabel = hasConversation ? 'Continue' : 'Start';
+              const cardClasses = hasConversation
+                ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-300'
+                : 'hover:border-indigo-300';
+              const buttonClasses = hasConversation
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-indigo-600 hover:bg-indigo-700';
+              const maxMessages = template.max_messages
+                ? `<span class="text-xs text-slate-500">Limit: ${template.max_messages}</span>`
+                : '';
+              const conversationId = template.conversation_id != null ? template.conversation_id : 'null';
+
+              return `
+                <article class="flex h-full flex-col justify-between rounded-xl border border-slate-200 p-5 text-left shadow-sm transition ${cardClasses}"
+                         onclick="handleTemplateClick(${template.id}, ${conversationId})">
+                  <div>
+                    <h4 class="text-base font-semibold text-slate-900">${escapeHtml(template.title || 'Untitled Session')}</h4>
+                    ${template.purpose ? `<p class="mt-2 text-sm leading-6 text-slate-600">${formatMultiline(template.purpose)}</p>` : ''}
+                  </div>
+                  <div class="mt-4 flex items-center gap-3">
+                    <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                      ${escapeHtml(template.model || 'Model')}
+                    </span>
+                    ${maxMessages}
+                    <button type="button"
+                            class="ml-auto inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold text-white ${buttonClasses}">
+                      ${buttonLabel}
+                    </button>
+                  </div>
+                </article>
+              `;
+            }).join('')
+          : `<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+               No chat templates available in this window yet.
+             </div>`;
+
+        return `
+          <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 class="text-xl font-semibold text-slate-900">${escapeHtml(window.title || 'Chat Window')}</h3>
+                ${descriptionHtml}
+              </div>
+              <div class="flex flex-col items-start gap-2 text-sm text-slate-500 sm:items-end">
+                <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${statusClasses}">
+                  ${statusLabel}
+                </span>
+                <span>📅 ${dateRange}</span>
+              </div>
+            </div>
+            <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              ${templatesHtml}
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    async function handleTemplateClick(templateId, conversationId) {
+      if (conversationId && conversationId !== 'null') {
+        window.location.href = `/conversation/${conversationId}`;
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/windows/start_conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template_id: templateId })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to start conversation');
         }
 
-        // Load data on page load
-        async function initialize() {
-            await loadChatWindows();
-            await loadExistingConversations();
+        const data = await response.json();
+        window.location.href = `/conversation/${data.id}`;
+      } catch (error) {
+        console.error('Error starting conversation:', error);
+        alert('Failed to start conversation. Please try again.');
+      }
+    }
+
+    async function loadExistingConversations() {
+      try {
+        const response = await fetch('/api/conversations');
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+          throw new Error('Failed to load conversations');
         }
 
-        initialize();
-    </script>
+        conversations = await response.json();
+
+        const windowConvIds = currentWindows.flatMap(w =>
+          (w.templates || []).filter(t => t.conversation_id).map(t => t.conversation_id)
+        );
+
+        const oldConversations = (conversations || []).filter(c => !windowConvIds.includes(c.id));
+
+        const existingSection = document.getElementById('existingConversations');
+        const list = document.getElementById('conversationsList');
+
+        if (!oldConversations.length) {
+          existingSection.classList.add('hidden');
+          list.innerHTML = '';
+          return;
+        }
+
+        existingSection.classList.remove('hidden');
+        list.innerHTML = oldConversations.map(conv => `
+          <article class="flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow"
+                   onclick="window.location.href='/conversation/${conv.id}'">
+            <div class="flex items-center justify-between gap-3">
+              <h4 class="text-sm font-semibold text-slate-900">${escapeHtml(conv.title || 'Untitled Conversation')}</h4>
+              <span class="text-xs text-slate-500">${escapeHtml(formatDate(conv.updated_at))}</span>
+            </div>
+            <div class="mt-3 inline-flex items-center gap-2">
+              <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                ${escapeHtml(conv.model || 'Model')}
+              </span>
+              <span class="text-xs text-slate-500">💬 ${conv.message_count || 0} messages</span>
+            </div>
+          </article>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      }
+    }
+
+    function formatDateRange(startTs, endTs) {
+      if (!startTs || !endTs) return '—';
+      const start = new Date(startTs * 1000);
+      const end = new Date(endTs * 1000);
+      return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    }
+
+    function formatDate(timestamp) {
+      if (!timestamp) return '—';
+      return new Date(timestamp * 1000).toLocaleDateString();
+    }
+
+    async function logout() {
+      await fetch('/logout');
+      window.location.href = '/login';
+    }
+
+    async function loadSelections() {
+      try {
+        const response = await fetch('/api/selections');
+        if (!response.ok) return;
+
+        const selections = await response.json();
+        const content = document.getElementById('selectionsContent');
+
+        if (!selections.length) {
+          content.innerHTML = '<div class="px-5 py-6 text-sm text-slate-500">No saved selections yet.</div>';
+          return;
+        }
+
+        content.innerHTML = selections.map(sel => `
+          <div class="px-5 py-4 text-sm text-slate-700">
+            <div class="mb-2 whitespace-pre-wrap text-slate-800">${escapeHtml(sel.text || '')}</div>
+            ${sel.note ? `<div class="text-xs italic text-slate-500">${escapeHtml(sel.note)}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading selections:', error);
+      }
+    }
+
+    function toggleSelections() {
+      const sidebar = document.getElementById('selectionsSidebar');
+      const overlay = document.getElementById('selectionsOverlay');
+      const hidden = sidebar.classList.contains('translate-x-full');
+
+      if (hidden) {
+        sidebar.classList.remove('translate-x-full');
+        overlay.classList.remove('hidden');
+        loadSelections();
+      } else {
+        sidebar.classList.add('translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    const selectionsOverlay = document.getElementById('selectionsOverlay');
+    if (selectionsOverlay) {
+      selectionsOverlay.addEventListener('click', () => {
+        const sidebar = document.getElementById('selectionsSidebar');
+        sidebar.classList.add('translate-x-full');
+        selectionsOverlay.classList.add('hidden');
+      });
+    }
+
+    async function initialize() {
+      await loadChatWindows();
+      await loadExistingConversations();
+    }
+
+    initialize();
+  </script>
 </body>
 </html>
