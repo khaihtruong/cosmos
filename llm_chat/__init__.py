@@ -1,5 +1,6 @@
 import os
 import secrets
+from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask
 from .extensions import db, migrate, login_manager
@@ -12,8 +13,15 @@ from .routes.chat_windows import window_bp
 from .routes.reports import reports_bp
 from flask_smorest import Api
 
-# Load variables from .env
-load_dotenv()
+# Load variables from .env - use explicit path to ensure it's found
+# Get the project root directory (two levels up from this file)
+project_root = Path(__file__).parent.parent
+env_path = project_root / '.env'
+if not env_path.exists():
+    print(f"WARNING: .env file not found at {env_path}")
+else:
+    load_dotenv(dotenv_path=env_path)
+    print(f"✓ Loaded environment variables from {env_path}")
 
 def create_app():
     app = Flask(__name__, template_folder="../templates", static_folder="../static")

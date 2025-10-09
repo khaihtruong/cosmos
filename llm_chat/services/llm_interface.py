@@ -36,7 +36,16 @@ class LLMInterface:
             except Exception as e:
                 print(f"✗ Could not initialize OpenAI client: {e}")
         else:
-            print("✗ OpenAI API key not configured or invalid")
+            reasons = []
+            if not OpenAI:
+                reasons.append("OpenAI library not installed")
+            if not openai_key:
+                reasons.append("No API key found")
+            elif not openai_key.strip():
+                reasons.append("API key is empty")
+            elif openai_key == 'your_openai_key_here':
+                reasons.append("Using placeholder value")
+            print(f"✗ OpenAI API key not configured or invalid: {', '.join(reasons)}")
 
         # Anthropic
         anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
@@ -47,7 +56,16 @@ class LLMInterface:
             except Exception as e:
                 print(f"✗ Could not initialize Anthropic client: {e}")
         else:
-            print("✗ Anthropic API key not configured or invalid")
+            reasons = []
+            if not Anthropic:
+                reasons.append("Anthropic library not installed")
+            if not anthropic_key:
+                reasons.append("No API key found")
+            elif not anthropic_key.strip():
+                reasons.append("API key is empty")
+            elif anthropic_key == 'your_anthropic_key_here':
+                reasons.append("Using placeholder value")
+            print(f"✗ Anthropic API key not configured or invalid: {', '.join(reasons)}")
 
         # Google
         google_key = os.environ.get('GOOGLE_API_KEY')
