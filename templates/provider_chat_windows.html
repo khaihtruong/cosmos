@@ -1,1212 +1,708 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Patient Chat Windows - Provider Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-        }
-
-        .header {
-            background: white;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            color: #333;
-            font-size: 1.5rem;
-        }
-
-        .nav-breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .nav-link {
-            color: #4682B4;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .nav-link:hover {
-            text-decoration: underline;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .role-badge {
-            padding: 0.25rem 0.75rem;
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .logout-btn {
-            padding: 0.5rem 1rem;
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .logout-btn:hover {
-            background: #e73c3c;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        /* Patient Selection View */
-        .patient-selection {
-            display: block;
-        }
-
-        .section-header {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .section-header h2 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .section-header p {
-            color: #666;
-        }
-
-        .patients-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .patient-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .patient-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-            border-color: #4682B4;
-        }
-
-        .patient-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .patient-email {
-            color: #666;
-            margin-bottom: 1rem;
-        }
-
-        .patient-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: #888;
-        }
-
-        /* Chat Windows Management View */
-        .windows-management {
-            display: none;
-        }
-
-        .management-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .patient-info-header {
-            flex: 1;
-        }
-
-        .patient-info-header h2 {
-            color: #333;
-            margin-bottom: 0.25rem;
-        }
-
-        .patient-info-header p {
-            color: #666;
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(70, 130, 180, 0.4);
-        }
-
-        .windows-list {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .window-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-
-        .window-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 1.5rem;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .window-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .window-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .window-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-icon {
-            padding: 0.5rem;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .btn-icon:hover {
-            background: #f5f7fa;
-        }
-
-        .btn-icon.edit {
-            color: #4682B4;
-        }
-
-        .btn-icon.delete {
-            color: #ff4757;
-        }
-
-        .window-meta {
-            display: flex;
-            gap: 2rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .status-badge.active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-badge.inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-badge.scheduled {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .window-description {
-            color: #555;
-            margin-top: 0.5rem;
-            line-height: 1.5;
-        }
-
-        .window-body {
-            padding: 1.5rem;
-        }
-
-        .templates-section h4 {
-            color: #333;
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-
-        .templates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-
-        .template-item {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-        }
-
-        .template-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
-
-        .template-purpose {
-            color: #666;
-            font-size: 0.85rem;
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-        }
-
-        .template-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-        }
-
-        .model-badge {
-            padding: 0.2rem 0.6rem;
-            background: #e3f2fd;
-            color: #1976d2;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-
-        .template-stats {
-            color: #888;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: #666;
-            padding: 2rem;
-            font-style: italic;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-        }
-
-        .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 2rem;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .modal-header h2 {
-            color: #333;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .date-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .templates-editor {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-            background: #f8f9fa;
-        }
-
-        .template-editor-item {
-            background: white;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            border: 1px solid #e0e0e0;
-        }
-
-        .template-editor-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .btn-remove {
-            padding: 0.25rem 0.5rem;
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .btn-add-template {
-            padding: 0.5rem 1rem;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            margin-top: 1rem;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .btn-cancel {
-            padding: 0.75rem 1.5rem;
-            background: #f0f0f0;
-            color: #666;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        /* Checkbox Styles */
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .checkbox-label {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            cursor: pointer;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .checkbox-label:hover {
-            background: #e9ecef;
-            border-color: #4682B4;
-        }
-
-        .checkbox-label input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .checkbox-label span {
-            flex: 1;
-            line-height: 1.4;
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Patient Chat Windows</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 600: '#4f46e5' } }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-    <div class="header">
-        <div>
-            <h1>Manage Patient Chat Windows</h1>
-            <div class="nav-breadcrumb" id="breadcrumb">
-                <span class="nav-link" onclick="showPatientSelection()">Patients</span>
-            </div>
-        </div>
-        <div class="user-info">
-            <span class="role-badge">Provider</span>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-    </div>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full border-r border-slate-200 bg-white px-3 py-4 transition-transform lg:static lg:translate-x-0">
+      
+      <div class="mb-4 flex items-center gap-2 px-3">
+        
+        <span class="font-semibold">Provider</span>
+      </div>
 
-    <div class="container">
-        <!-- Patient Selection View -->
-        <div class="patient-selection" id="patientSelection">
-            <div class="section-header">
-                <h2>Select a Patient</h2>
-                <p>Choose a patient to manage their chat windows and therapeutic sessions</p>
-            </div>
-            <div class="patients-grid" id="patientsGrid">
-                <!-- Patients will be loaded here -->
-            </div>
+      <!-- Nav -->
+      <nav class="space-y-6 overflow-y-auto px-1">
+        <div>
+          <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pages</p>
+          <ul class="space-y-1">
+            <li>
+              <a href="/provider/dashboard"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/>
+                </svg>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <!-- Active item -->
+              <a href="/provider/chat-windows"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-800 bg-indigo-50 ring-1 ring-inset ring-indigo-100">
+                <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M8 10h8M8 14h5"/><path d="M21 12a8.5 8.5 0 01-1.6 5l.6 3-3-1a8.5 8.5 0 11-2-14.5"/>
+                </svg>
+                <span>Chat Windows</span>
+              </a>
+            </li>
+            <li>
+              <a href="/provider/patient-progress"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M4 19V5m4 14V9m4 10V7m4 12V4"/>
+                </svg>
+                <span>Patient Progress</span>
+              </a>
+            </li>
+            <li>
+              <a href="/provider/settings"
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M10 6h4l1 2 2 1v4l-2 1-1 2h-4l-1-2-2-1V9l2-1 1-2z"/><circle cx="12" cy="12" r="2.5"/>
+                </svg>
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
         </div>
+      </nav>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 z-30 hidden bg-black/30 lg:hidden"></div>
+
+    <!-- Main column -->
+    <div class="flex-1 min-w-0 flex flex-col">
+      <!-- Top bar -->
+      <header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur">
+        <!-- Mobile menu -->
+        <button id="menuBtn" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 lg:hidden">
+          <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <span class="text-sm">Menu</span>
+        </button>
+
+        <!-- Page title -->
+        <h1 class="text-lg font-semibold">Manage Patient Chat Windows</h1>
+
+        <!-- Right -->
+        <div class="ml-auto flex items-center gap-3">
+          <button onclick="logout()"
+                  class="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="w-full p-6">
+
+        <div class="mb-4 text-sm text-slate-500" id="breadcrumb">
+          <button class="text-indigo-600 hover:underline" onclick="showPatientSelection()">Patients</button>
+        </div>
+
+        <!-- Patient Selection View -->
+        <section id="patientSelection" class="block">
+          <div class="mb-6 rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
+            <h2 class="mb-1 text-xl font-semibold">Select a Patient</h2>
+            <p class="text-slate-600">Choose a patient to manage their chat windows and therapeutic sessions</p>
+          </div>
+
+          <div id="patientsGrid"
+               class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <!-- injected -->
+          </div>
+        </section>
 
         <!-- Windows Management View -->
-        <div class="windows-management" id="windowsManagement">
-            <div class="management-header">
-                <div class="patient-info-header">
-                    <h2 id="selectedPatientName">Patient Name</h2>
-                    <p id="selectedPatientEmail">patient@email.com</p>
-                </div>
-                <button class="btn-primary" onclick="openCreateModal()">+ Create New Window</button>
+        <section id="windowsManagement" class="hidden">
+          <div class="mb-6 flex items-center justify-between rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+            <div>
+              <h2 id="selectedPatientName" class="text-lg font-semibold">Patient Name</h2>
+              <p id="selectedPatientEmail" class="text-slate-600">patient@email.com</p>
             </div>
+            <button class="rounded-lg bg-gradient-to-r from-sky-300 to-sky-700 px-4 py-2 font-semibold text-white hover:shadow"
+                    onclick="openCreateModal()">
+              + Create New Window
+            </button>
+          </div>
 
-            <div class="windows-list" id="windowsList">
-                <!-- Windows will be loaded here -->
-            </div>
+          <div id="windowsList" class="grid gap-4">
 
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <p>No chat windows created yet for this patient.</p>
-            </div>
-        </div>
+          </div>
+
+          <div id="emptyState" class="hidden text-center italic text-slate-600">
+            No chat windows created yet for this patient.
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
 
-    <!-- Create/Edit Modal -->
-    <div class="modal" id="windowModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Create Chat Window</h2>
-                <button class="close-modal" onclick="closeModal()">&times;</button>
+  <!-- Create/Edit Modal -->
+  <div id="windowModal"
+       class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 id="modalTitle" class="text-xl font-semibold">Create Chat Window</h2>
+        <button class="text-2xl leading-none text-slate-500 hover:text-slate-700" onclick="closeModal()">&times;</button>
+      </div>
+
+      <form id="windowForm" class="space-y-5">
+        <div>
+          <label class="mb-1 block font-semibold">Window Title</label>
+          <input id="windowTitle" type="text" required placeholder="e.g., Week 1 - Anxiety Management"
+                 class="w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400"/>
+        </div>
+
+        <div>
+          <label class="mb-1 block font-semibold">Description</label>
+          <textarea id="windowDescription" placeholder="Brief description of this chat window's purpose..."
+                    class="w-full min-h-[100px] resize-y rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400"></textarea>
+        </div>
+
+        <div>
+          <label class="mb-1 block font-semibold">Time Period</label>
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-sm text-slate-700">Start Date</label>
+              <input id="startDate" type="datetime-local" required
+                     class="w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400"/>
+            </div>
+            <div>
+              <label class="mb-1 block text-sm text-slate-700">End Date</label>
+              <input id="endDate" type="datetime-local" required
+                     class="w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400"/>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-2 block font-semibold">Chat Templates</label>
+          <div id="templatesEditor" class="rounded-lg border-2 border-slate-200 bg-slate-50 p-3"></div>
+          <button type="button" class="mt-3 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  onclick="addTemplateEditor()">+ Add Chat Template</button>
+        </div>
+
+        <div>
+          <label class="mb-2 block font-semibold">Report Configuration</label>
+          <p class="mb-3 text-sm text-slate-600">Configure which components will be included in the automatic report generated when this window completes.</p>
+
+          <div class="space-y-3">
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="window_config_ai_summary" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>AI Summary</strong> — Intelligent analysis of conversation themes and progress</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="window_config_saved_messages" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Saved Messages</strong> — Important messages flagged during sessions</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="window_config_descriptive_stats" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Descriptive Statistics</strong> — Message counts, word counts, session duration</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="window_config_nlp_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>NLP Analysis</strong> — Sentiment analysis and communication patterns</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4">
+          <button type="button" class="rounded-md bg-slate-100 px-4 py-2 font-medium text-slate-700 hover:bg-slate-200"
+                  onclick="closeModal()">Cancel</button>
+          <button type="submit" class="rounded-md bg-gradient-to-r from-sky-300 to-sky-700 px-5 py-2 font-semibold text-white hover:shadow">
+            Save Window
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Report Configuration Modal -->
+  <div id="reportConfigModal"
+       class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-2xl rounded-xl bg-white p-6">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Configure Enhanced Report</h2>
+        <button class="text-2xl leading-none text-slate-500 hover:text-slate-700" onclick="closeReportConfigModal()">&times;</button>
+      </div>
+
+      <form id="reportConfigForm" class="space-y-5">
+        <div>
+          <p class="mb-2 font-semibold">Select Report Components:</p>
+          <div class="space-y-3">
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="config_ai_summary" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>AI Summary</strong> — Intelligent analysis of conversation themes and progress</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="config_saved_messages" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Saved Messages</strong> — Important messages flagged during sessions</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="config_descriptive_stats" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Descriptive Statistics</strong> — Message counts, word counts, session duration</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="config_nlp_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>NLP Analysis</strong> — Sentiment analysis and communication patterns</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4">
+          <button type="button" class="rounded-md bg-slate-100 px-4 py-2 font-medium text-slate-700 hover:bg-slate-200"
+                  onclick="closeReportConfigModal()">Cancel</button>
+          <button type="submit" class="rounded-md bg-gradient-to-r from-sky-300 to-sky-700 px-5 py-2 font-semibold text-white hover:shadow">
+            Generate Enhanced Report
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+
+    const menuBtn  = document.getElementById('menuBtn');
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('overlay');
+    const openSide  = () => { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); }
+    const closeSide = () => { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
+
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        const open = sidebar.classList.contains('-translate-x-full');
+        open ? openSide() : closeSide();
+      });
+      overlay.addEventListener('click', closeSide);
+      if (window.innerWidth >= 1024) sidebar.classList.remove('-translate-x-full');
+    }
+
+    let patients = [];
+    let currentPatient = null;
+    let windows = [];
+    let models = [];
+    let systemPrompts = [];
+    let currentWindowId = null;
+    let currentReportWindowId = null;
+
+    function formatDate(timestamp){ return new Date(timestamp * 1000).toLocaleDateString(); }
+    function formatDateTimeLocal(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth()+1).padStart(2,'0');
+      const d = String(date.getDate()).padStart(2,'0');
+      const h = String(date.getHours()).padStart(2,'0');
+      const min = String(date.getMinutes()).padStart(2,'0');
+      return `${y}-${m}-${d}T${h}:${min}`;
+    }
+
+    async function loadPatients() {
+      try {
+        const res = await fetch('/api/provider/patients');
+        patients = await res.json();
+        displayPatients();
+      } catch (e) { console.error('Error loading patients:', e); }
+    }
+
+    function displayPatients() {
+      const grid = document.getElementById('patientsGrid');
+      grid.innerHTML = patients.map(p => `
+        <div class="cursor-pointer rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md"
+             onclick="selectPatient(${p.id})">
+          <div class="mb-1 text-base font-semibold text-slate-900">${p.username}</div>
+          <div class="mb-3 text-sm text-slate-600">${p.email}</div>
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>Conversations: ${p.conversation_count}</span>
+            <span>Last Active: ${p.last_active ? formatDate(p.last_active) : 'Never'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function selectPatient(patientId) {
+      currentPatient = patients.find(p => p.id === patientId);
+      if (!currentPatient) return;
+
+      document.getElementById('breadcrumb').innerHTML = `
+        <button class="text-indigo-600 hover:underline" onclick="showPatientSelection()">Patients</button>
+        <span class="mx-1">›</span>
+        <span class="text-slate-700">${currentPatient.username}</span>
+      `;
+
+      document.getElementById('selectedPatientName').textContent = currentPatient.username;
+      document.getElementById('selectedPatientEmail').textContent = currentPatient.email;
+
+      document.getElementById('patientSelection').classList.add('hidden');
+      document.getElementById('windowsManagement').classList.remove('hidden');
+
+      await loadWindows(patientId);
+    }
+
+    function showPatientSelection() {
+      document.getElementById('patientSelection').classList.remove('hidden');
+      document.getElementById('windowsManagement').classList.add('hidden');
+      document.getElementById('breadcrumb').innerHTML = `
+        <button class="text-indigo-600 hover:underline" onclick="showPatientSelection()">Patients</button>
+      `;
+      currentPatient = null;
+    }
+
+    // ===== Windows =====
+    async function loadWindows(patientId) {
+      try {
+        const res = await fetch(`/api/windows?patient_id=${patientId}`);
+        windows = await res.json();
+        displayWindows();
+      } catch (e) { console.error('Error loading windows:', e); }
+    }
+
+    function displayWindows() {
+      const list = document.getElementById('windowsList');
+      const empty = document.getElementById('emptyState');
+
+      if (!windows.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      list.innerHTML = windows.map(w => {
+        let status = 'scheduled';
+        if (!w.is_active) status = 'inactive';
+        else if (w.is_current) status = 'active';
+
+        const statusClass = status === 'active'
+          ? 'bg-emerald-100 text-emerald-700'
+          : status === 'inactive'
+            ? 'bg-rose-100 text-rose-700'
+            : 'bg-amber-100 text-amber-700';
+
+        return `
+          <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
+            <div class="border-b border-slate-200 bg-slate-50 p-4">
+              <div class="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-base font-semibold text-slate-900">${w.title}</div>
+                  <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 ${statusClass}">${status[0].toUpperCase() + status.slice(1)}</span>
+                    <span>📅 ${formatDate(w.start_date)} – ${formatDate(w.end_date)}</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="rounded-md border border-slate-200 px-2 py-1 text-sm hover:bg-slate-100"
+                          title="Edit" onclick="editWindow(${w.id})">✏️</button>
+                  <button class="rounded-md border border-slate-200 px-2 py-1 text-sm hover:bg-slate-100 text-rose-600"
+                          title="Delete" onclick="deleteWindow(${w.id})">🗑️</button>
+                  ${!w.is_current && w.is_active ? `
+                    <button class="rounded-md border border-slate-200 px-2 py-1 text-sm hover:bg-slate-100"
+                            title="Configure & Generate Enhanced Report" onclick="openReportConfigModal(${w.id})">📊</button>
+                    <button class="rounded-md border border-slate-200 px-2 py-1 text-sm hover:bg-slate-100"
+                            title="Generate Basic Report" onclick="generateReport(${w.id})">📄</button>
+                  ` : ''}
+                </div>
+              </div>
+              ${w.description ? `<p class="text-sm text-slate-700">${w.description}</p>` : ''}
             </div>
 
-            <form id="windowForm">
-                <div class="form-group">
-                    <label for="windowTitle">Window Title</label>
-                    <input type="text" id="windowTitle" required placeholder="e.g., Week 1 - Anxiety Management">
-                </div>
-
-                <div class="form-group">
-                    <label for="windowDescription">Description</label>
-                    <textarea id="windowDescription" placeholder="Brief description of this chat window's purpose..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Time Period</label>
-                    <div class="date-inputs">
-                        <div>
-                            <label for="startDate">Start Date</label>
-                            <input type="datetime-local" id="startDate" required>
-                        </div>
-                        <div>
-                            <label for="endDate">End Date</label>
-                            <input type="datetime-local" id="endDate" required>
-                        </div>
+            <div class="p-4">
+              <h4 class="mb-3 text-sm font-semibold text-slate-800">Configured Chats (${w.templates ? w.templates.length : 0})</h4>
+              ${w.templates && w.templates.length ? `
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  ${w.templates.map(t => `
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div class="mb-1 text-sm font-semibold text-slate-900">${t.title}</div>
+                      ${t.purpose ? `<div class="mb-2 text-sm text-slate-600">${t.purpose}</div>` : ''}
+                      <div class="flex items-center justify-between text-xs text-slate-600">
+                        <span class="rounded-md bg-sky-100 px-2 py-0.5 font-medium text-sky-700">${t.model || 'Unknown Model'}</span>
+                        <span>${t.max_messages ? `Max: ${t.max_messages}` : 'Unlimited'}</span>
+                      </div>
                     </div>
+                  `).join('')}
                 </div>
-
-                <div class="form-group">
-                    <label>Chat Templates</label>
-                    <div class="templates-editor" id="templatesEditor">
-                        <!-- Template editors will be added here -->
-                    </div>
-                    <button type="button" class="btn-add-template" onclick="addTemplateEditor()">+ Add Chat Template</button>
-                </div>
-
-                <div class="form-group">
-                    <label>Report Configuration</label>
-                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Configure which components will be included in the automatic report generated when this window completes.</p>
-
-                    <div class="checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="window_config_ai_summary" checked>
-                            <span>
-                                <strong>AI Summary</strong> - Intelligent analysis of conversation themes and progress
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="window_config_saved_messages" checked>
-                            <span>
-                                <strong>Saved Messages</strong> - Important messages flagged during sessions
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="window_config_descriptive_stats" checked>
-                            <span>
-                                <strong>Descriptive Statistics</strong> - Message counts, word counts, session duration
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="window_config_nlp_analysis" checked>
-                            <span>
-                                <strong>NLP Analysis</strong> - Sentiment analysis and communication patterns
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Window</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Report Configuration Modal -->
-    <div class="modal" id="reportConfigModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Configure Enhanced Report</h2>
-                <button class="close-modal" onclick="closeReportConfigModal()">&times;</button>
+              ` : `<div class="py-6 text-center text-slate-600">No chat templates configured</div>`}
             </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-            <form id="reportConfigForm">
-                <div class="form-group">
-                    <label>Select Report Components:</label>
+    // ===== Models/Prompts =====
+    async function loadModels() {
+      try { models = await (await fetch('/api/models')).json(); }
+      catch(e){ console.error('Error loading models:', e); }
+    }
+    async function loadSystemPrompts() {
+      try { systemPrompts = await (await fetch('/api/system_prompts')).json(); }
+      catch(e){ console.error('Error loading prompts:', e); }
+    }
 
-                    <div class="checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="config_ai_summary" checked>
-                            <span class="checkmark"></span>
-                            <strong>AI Summary</strong> - Intelligent analysis of conversation themes and progress
-                        </label>
+    // ===== Modal (Create/Edit) =====
+    function openCreateModal() {
+      if (!currentPatient) return alert('Please select a patient first');
+      currentWindowId = null;
 
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="config_saved_messages" checked>
-                            <span class="checkmark"></span>
-                            <strong>Saved Messages</strong> - Important messages flagged during sessions
-                        </label>
+      document.getElementById('modalTitle').textContent = 'Create Chat Window';
+      document.getElementById('windowForm').reset();
+      document.getElementById('templatesEditor').innerHTML = '';
 
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="config_descriptive_stats" checked>
-                            <span class="checkmark"></span>
-                            <strong>Descriptive Statistics</strong> - Message counts, word counts, session duration
-                        </label>
+      document.getElementById('window_config_ai_summary').checked = true;
+      document.getElementById('window_config_saved_messages').checked = true;
+      document.getElementById('window_config_descriptive_stats').checked = true;
+      document.getElementById('window_config_nlp_analysis').checked = true;
 
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="config_nlp_analysis" checked>
-                            <span class="checkmark"></span>
-                            <strong>NLP Analysis</strong> - Sentiment analysis and communication patterns
-                        </label>
-                    </div>
-                </div>
+      addTemplateEditor();
+      document.getElementById('windowModal').classList.remove('hidden');
+      document.getElementById('windowModal').classList.add('flex');
+    }
 
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancel" onclick="closeReportConfigModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Generate Enhanced Report</button>
-                </div>
-            </form>
+    function closeModal() {
+      const m = document.getElementById('windowModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function editWindow(windowId) {
+      try {
+        const res = await fetch(`/api/windows/${windowId}`);
+        if (!res.ok) throw new Error('Failed to load window data');
+        const w = await res.json();
+
+        currentWindowId = windowId;
+        document.getElementById('modalTitle').textContent = 'Edit Chat Window';
+        document.getElementById('windowTitle').value = w.title || '';
+        document.getElementById('windowDescription').value = w.description || '';
+
+        if (w.start_date) {
+          const sd = new Date(w.start_date * 1000);
+          document.getElementById('startDate').value = formatDateTimeLocal(sd);
+        }
+        if (w.end_date) {
+          const ed = new Date(w.end_date * 1000);
+          document.getElementById('endDate').value = formatDateTimeLocal(ed);
+        }
+
+        const cfg = w.report_config || {};
+        document.getElementById('window_config_ai_summary').checked = cfg.ai_summary !== false;
+        document.getElementById('window_config_saved_messages').checked = cfg.saved_messages !== false;
+        document.getElementById('window_config_descriptive_stats').checked = cfg.descriptive_stats !== false;
+        document.getElementById('window_config_nlp_analysis').checked = cfg.nlp_analysis !== false;
+
+        const editor = document.getElementById('templatesEditor');
+        editor.innerHTML = '';
+        if (w.templates && w.templates.length) {
+          w.templates.forEach((t, i) => {
+            addTemplateEditor();
+            const el = document.querySelectorAll('.template-editor-item')[i];
+            el.querySelector('.template-title-input').value = t.title || '';
+            el.querySelector('.template-purpose-input').value = t.purpose || '';
+            el.querySelector('.template-model-select').value = t.model_id || '';
+            el.querySelector('.template-prompt-select').value = t.system_prompt_id || '';
+            el.querySelector('.template-custom-prompt').value = t.custom_system_prompt || '';
+          });
+        } else addTemplateEditor();
+
+        document.getElementById('windowModal').classList.remove('hidden');
+        document.getElementById('windowModal').classList.add('flex');
+      } catch (e) {
+        console.error('Error loading window for edit:', e);
+        alert(`Failed to load window data: ${e.message}`);
+      }
+    }
+
+    function addTemplateEditor() {
+      const editor = document.getElementById('templatesEditor');
+      const index = editor.children.length;
+
+      const div = document.createElement('div');
+      div.className = 'template-editor-item mb-3 rounded-md border border-slate-200 bg-white p-3';
+      div.innerHTML = `
+        <div class="mb-3 flex items-center justify-between">
+          <strong>Chat Template ${index + 1}</strong>
+          <button type="button" class="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700" onclick="removeTemplateEditor(this)">Remove</button>
         </div>
-    </div>
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-semibold">Template Title</label>
+          <input type="text" class="template-title-input w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400" required placeholder="e.g., Anxiety Discussion">
+        </div>
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-semibold">Purpose</label>
+          <textarea class="template-purpose-input w-full min-h-[80px] resize-y rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400" placeholder="What is this chat for?"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-semibold">Model</label>
+          <select class="template-model-select w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400" required>
+            ${models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-semibold">System Prompt</label>
+          <select class="template-prompt-select w-full rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400">
+            <option value="">-- Default --</option>
+            ${systemPrompts.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold">Custom Instructions (optional)</label>
+          <textarea class="template-custom-prompt w-full min-h-[80px] resize-y rounded-md border-2 border-slate-200 px-3 py-2 outline-none focus:border-indigo-400" placeholder="Additional instructions for this chat..."></textarea>
+        </div>
+      `;
+      editor.appendChild(div);
+    }
 
-    <script>
-        let patients = [];
-        let currentPatient = null;
-        let windows = [];
-        let models = [];
-        let systemPrompts = [];
-        let currentWindowId = null;
+    function removeTemplateEditor(btn) {
+      btn.closest('.template-editor-item').remove();
+    }
 
-        async function loadPatients() {
-            try {
-                const response = await fetch('/api/provider/patients');
-                patients = await response.json();
-                displayPatients();
-            } catch (error) {
-                console.error('Error loading patients:', error);
-            }
+    document.getElementById('windowForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const templates = [];
+      document.querySelectorAll('.template-editor-item').forEach(item => {
+        templates.push({
+          title: item.querySelector('.template-title-input').value,
+          purpose: item.querySelector('.template-purpose-input').value,
+          model_id: parseInt(item.querySelector('.template-model-select').value),
+          system_prompt_id: item.querySelector('.template-prompt-select').value || null,
+          custom_system_prompt: item.querySelector('.template-custom-prompt').value || null
+        });
+      });
+
+      const report_config = {
+        ai_summary: document.getElementById('window_config_ai_summary').checked,
+        saved_messages: document.getElementById('window_config_saved_messages').checked,
+        descriptive_stats: document.getElementById('window_config_descriptive_stats').checked,
+        nlp_analysis: document.getElementById('window_config_nlp_analysis').checked
+      };
+
+      const payload = {
+        patient_id: currentPatient.id,
+        title: document.getElementById('windowTitle').value,
+        description: document.getElementById('windowDescription').value,
+        start_date: new Date(document.getElementById('startDate').value).getTime() / 1000,
+        end_date: new Date(document.getElementById('endDate').value).getTime() / 1000,
+        templates, report_config
+      };
+
+      try {
+        const url = currentWindowId ? `/api/windows/${currentWindowId}` : '/api/windows/';
+        const method = currentWindowId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method, headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Failed to save window');
+
+        closeModal();
+        loadWindows(currentPatient.id);
+      } catch (e) {
+        console.error('Error saving window:', e);
+        alert('Failed to save window. Please try again.');
+      }
+    });
+
+    async function deleteWindow(windowId) {
+      if (!confirm('Are you sure you want to delete this chat window?')) return;
+      try {
+        const res = await fetch(`/api/windows/${windowId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete window');
+        loadWindows(currentPatient.id);
+      } catch (e) {
+        console.error('Error deleting window:', e);
+        alert('Failed to delete window. It may have existing conversations.');
+      }
+    }
+
+    // ===== Reports =====
+    async function generateReport(windowId) {
+      if (!confirm('Generate a basic report for this completed window?')) return;
+      try {
+        const res = await fetch(`/api/reports/window/${windowId}/generate`, { method: 'POST' });
+        if (!res.ok) {
+          const err = await res.json(); throw new Error(err.error || 'Failed to generate report');
         }
+        await res.json();
+        alert('Basic report generated successfully!');
+        loadWindows(currentPatient.id);
+      } catch (e) {
+        console.error('Error generating report:', e);
+        alert(`Failed to generate report: ${e.message}`);
+      }
+    }
 
-        function displayPatients() {
-            const grid = document.getElementById('patientsGrid');
-            grid.innerHTML = patients.map(patient => `
-                <div class="patient-card" onclick="selectPatient(${patient.id})">
-                    <div class="patient-name">${patient.username}</div>
-                    <div class="patient-email">${patient.email}</div>
-                    <div class="patient-stats">
-                        <span>Conversations: ${patient.conversation_count}</span>
-                        <span>Last Active: ${patient.last_active ? formatDate(patient.last_active) : 'Never'}</span>
-                    </div>
-                </div>
-            `).join('');
+    async function openReportConfigModal(windowId) {
+      currentReportWindowId = windowId;
+      try {
+        const res = await fetch(`/api/reports/window/${windowId}/config`);
+        if (res.ok) {
+          const cfg = await res.json();
+          document.getElementById('config_ai_summary').checked = cfg.ai_summary !== false;
+          document.getElementById('config_saved_messages').checked = cfg.saved_messages !== false;
+          document.getElementById('config_descriptive_stats').checked = cfg.descriptive_stats !== false;
+          document.getElementById('config_nlp_analysis').checked = cfg.nlp_analysis !== false;
         }
+      } catch (e) { console.error('Error loading report config:', e); }
 
-        async function selectPatient(patientId) {
-            currentPatient = patients.find(p => p.id === patientId);
-            if (!currentPatient) return;
+      const m = document.getElementById('reportConfigModal');
+      m.classList.remove('hidden'); m.classList.add('flex');
+    }
 
-            // Update breadcrumb
-            document.getElementById('breadcrumb').innerHTML = `
-                <span class="nav-link" onclick="showPatientSelection()">Patients</span>
-                <span> > </span>
-                <span>${currentPatient.username}</span>
-            `;
+    function closeReportConfigModal() {
+      const m = document.getElementById('reportConfigModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
+      currentReportWindowId = null;
+    }
 
-            // Update header
-            document.getElementById('selectedPatientName').textContent = currentPatient.username;
-            document.getElementById('selectedPatientEmail').textContent = currentPatient.email;
+    document.getElementById('reportConfigForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentReportWindowId) return alert('No window selected');
 
-            // Switch views
-            document.getElementById('patientSelection').style.display = 'none';
-            document.getElementById('windowsManagement').style.display = 'block';
+      const config = {
+        ai_summary: document.getElementById('config_ai_summary').checked,
+        saved_messages: document.getElementById('config_saved_messages').checked,
+        descriptive_stats: document.getElementById('config_descriptive_stats').checked,
+        nlp_analysis: document.getElementById('config_nlp_analysis').checked
+      };
 
-            // Load windows for this patient
-            await loadWindows(patientId);
-        }
-
-        function showPatientSelection() {
-            document.getElementById('patientSelection').style.display = 'block';
-            document.getElementById('windowsManagement').style.display = 'none';
-            document.getElementById('breadcrumb').innerHTML = '<span>Patients</span>';
-            currentPatient = null;
-        }
-
-        async function loadWindows(patientId) {
-            try {
-                const response = await fetch(`/api/windows?patient_id=${patientId}`);
-                windows = await response.json();
-                displayWindows();
-            } catch (error) {
-                console.error('Error loading windows:', error);
-            }
-        }
-
-        function displayWindows() {
-            const list = document.getElementById('windowsList');
-            const emptyState = document.getElementById('emptyState');
-
-            if (windows.length === 0) {
-                list.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            list.style.display = 'grid';
-            emptyState.style.display = 'none';
-
-            list.innerHTML = windows.map(window => {
-                const now = Date.now() / 1000;
-                let status = 'scheduled';
-                if (!window.is_active) status = 'inactive';
-                else if (window.is_current) status = 'active';
-
-                return `
-                    <div class="window-card">
-                        <div class="window-header">
-                            <div class="window-title-row">
-                                <div>
-                                    <div class="window-title">${window.title}</div>
-                                    <div class="window-meta">
-                                        <span class="status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
-                                        <span>📅 ${formatDate(window.start_date)} - ${formatDate(window.end_date)}</span>
-                                    </div>
-                                </div>
-                                <div class="window-actions">
-                                    <button class="btn-icon edit" onclick="editWindow(${window.id})" title="Edit">✏️</button>
-                                    <button class="btn-icon delete" onclick="deleteWindow(${window.id})" title="Delete">🗑️</button>
-                                    ${!window.is_current && window.is_active ? `<button class="btn-icon" onclick="openReportConfigModal(${window.id})" title="Configure & Generate Enhanced Report">📊</button>` : ''}
-                                    ${!window.is_current && window.is_active ? `<button class="btn-icon" onclick="generateReport(${window.id})" title="Generate Basic Report">📄</button>` : ''}
-                                </div>
-                            </div>
-                            ${window.description ? `<div class="window-description">${window.description}</div>` : ''}
-                        </div>
-                        <div class="window-body">
-                            <div class="templates-section">
-                                <h4>Configured Chats (${window.templates ? window.templates.length : 0})</h4>
-                                ${window.templates && window.templates.length > 0 ? `
-                                    <div class="templates-grid">
-                                        ${window.templates.map(template => `
-                                            <div class="template-item">
-                                                <div class="template-name">${template.title}</div>
-                                                ${template.purpose ? `<div class="template-purpose">${template.purpose}</div>` : ''}
-                                                <div class="template-meta">
-                                                    <span class="model-badge">${template.model || 'Unknown Model'}</span>
-                                                    <span class="template-stats">${template.max_messages ? `Max: ${template.max_messages}` : 'Unlimited'}</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : '<div class="empty-state">No chat templates configured</div>'}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function loadModels() {
-            try {
-                const response = await fetch('/api/models');
-                models = await response.json();
-            } catch (error) {
-                console.error('Error loading models:', error);
-            }
-        }
-
-        async function loadSystemPrompts() {
-            try {
-                const response = await fetch('/api/system_prompts');
-                systemPrompts = await response.json();
-            } catch (error) {
-                console.error('Error loading prompts:', error);
-            }
-        }
-
-        function openCreateModal() {
-            if (!currentPatient) {
-                alert('Please select a patient first');
-                return;
-            }
-
-            currentWindowId = null;
-            document.getElementById('modalTitle').textContent = 'Create Chat Window';
-            document.getElementById('windowForm').reset();
-            document.getElementById('templatesEditor').innerHTML = '';
-
-            // Reset report configuration to defaults
-            document.getElementById('window_config_ai_summary').checked = true;
-            document.getElementById('window_config_saved_messages').checked = true;
-            document.getElementById('window_config_descriptive_stats').checked = true;
-            document.getElementById('window_config_nlp_analysis').checked = true;
-
-            addTemplateEditor(); // Add one template by default
-            document.getElementById('windowModal').classList.add('show');
-        }
-
-        async function editWindow(windowId) {
-            try {
-                // Load window data
-                const response = await fetch(`/api/windows/${windowId}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load window data');
-                }
-
-                const windowData = await response.json();
-
-                // Set up the modal for editing
-                currentWindowId = windowId;
-                document.getElementById('modalTitle').textContent = 'Edit Chat Window';
-
-                // Populate form fields
-                document.getElementById('windowTitle').value = windowData.title || '';
-                document.getElementById('windowDescription').value = windowData.description || '';
-
-                // Format dates for datetime-local input
-                if (windowData.start_date) {
-                    const startDate = new Date(windowData.start_date * 1000);
-                    document.getElementById('startDate').value = formatDateTimeLocal(startDate);
-                }
-                if (windowData.end_date) {
-                    const endDate = new Date(windowData.end_date * 1000);
-                    document.getElementById('endDate').value = formatDateTimeLocal(endDate);
-                }
-
-                // Populate report configuration
-                const config = windowData.report_config || {};
-                document.getElementById('window_config_ai_summary').checked = config.ai_summary !== false;
-                document.getElementById('window_config_saved_messages').checked = config.saved_messages !== false;
-                document.getElementById('window_config_descriptive_stats').checked = config.descriptive_stats !== false;
-                document.getElementById('window_config_nlp_analysis').checked = config.nlp_analysis !== false;
-
-                // Clear and populate templates
-                document.getElementById('templatesEditor').innerHTML = '';
-
-                if (windowData.templates && windowData.templates.length > 0) {
-                    windowData.templates.forEach((template, index) => {
-                        addTemplateEditor();
-                        const templateEditor = document.querySelectorAll('.template-editor-item')[index];
-
-                        templateEditor.querySelector('.template-title-input').value = template.title || '';
-                        templateEditor.querySelector('.template-purpose-input').value = template.purpose || '';
-                        templateEditor.querySelector('.template-model-select').value = template.model_id || '';
-                        templateEditor.querySelector('.template-prompt-select').value = template.system_prompt_id || '';
-                        templateEditor.querySelector('.template-custom-prompt').value = template.custom_system_prompt || '';
-                    });
-                } else {
-                    // Add one empty template if none exist
-                    addTemplateEditor();
-                }
-
-                // Show the modal
-                document.getElementById('windowModal').classList.add('show');
-
-            } catch (error) {
-                console.error('Error loading window for edit:', error);
-                alert(`Failed to load window data: ${error.message}`);
-            }
-        }
-
-        function formatDateTimeLocal(date) {
-            // Format date to YYYY-MM-DDTHH:MM format for datetime-local input
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-
-        function closeModal() {
-            document.getElementById('windowModal').classList.remove('show');
-        }
-
-        function addTemplateEditor() {
-            const editor = document.getElementById('templatesEditor');
-            const index = editor.children.length;
-
-            const template = document.createElement('div');
-            template.className = 'template-editor-item';
-            template.innerHTML = `
-                <div class="template-editor-header">
-                    <strong>Chat Template ${index + 1}</strong>
-                    <button type="button" class="btn-remove" onclick="removeTemplateEditor(this)">Remove</button>
-                </div>
-                <div class="form-group">
-                    <label>Template Title</label>
-                    <input type="text" class="template-title-input" required placeholder="e.g., Anxiety Discussion">
-                </div>
-                <div class="form-group">
-                    <label>Purpose</label>
-                    <textarea class="template-purpose-input" placeholder="What is this chat for?"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Model</label>
-                    <select class="template-model-select" required>
-                        ${models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>System Prompt</label>
-                    <select class="template-prompt-select">
-                        <option value="">-- Default --</option>
-                        ${systemPrompts.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Custom Instructions (optional)</label>
-                    <textarea class="template-custom-prompt" placeholder="Additional instructions for this chat..."></textarea>
-                </div>
-            `;
-
-            editor.appendChild(template);
-        }
-
-        function removeTemplateEditor(button) {
-            button.closest('.template-editor-item').remove();
-        }
-
-        document.getElementById('windowForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const templates = [];
-
-            document.querySelectorAll('.template-editor-item').forEach(item => {
-                templates.push({
-                    title: item.querySelector('.template-title-input').value,
-                    purpose: item.querySelector('.template-purpose-input').value,
-                    model_id: parseInt(item.querySelector('.template-model-select').value),
-                    system_prompt_id: item.querySelector('.template-prompt-select').value || null,
-                    custom_system_prompt: item.querySelector('.template-custom-prompt').value || null
-                });
-            });
-
-            // Get report configuration
-            const reportConfig = {
-                ai_summary: document.getElementById('window_config_ai_summary').checked,
-                saved_messages: document.getElementById('window_config_saved_messages').checked,
-                descriptive_stats: document.getElementById('window_config_descriptive_stats').checked,
-                nlp_analysis: document.getElementById('window_config_nlp_analysis').checked
-            };
-
-            const windowData = {
-                patient_id: currentPatient.id,
-                title: document.getElementById('windowTitle').value,
-                description: document.getElementById('windowDescription').value,
-                start_date: new Date(document.getElementById('startDate').value).getTime() / 1000,
-                end_date: new Date(document.getElementById('endDate').value).getTime() / 1000,
-                templates: templates,
-                report_config: reportConfig
-            };
-
-            try {
-                const url = currentWindowId ? `/api/windows/${currentWindowId}` : '/api/windows/';
-                const method = currentWindowId ? 'PUT' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(windowData)
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to save window');
-                }
-
-                closeModal();
-                loadWindows(currentPatient.id);
-            } catch (error) {
-                console.error('Error saving window:', error);
-                alert('Failed to save window. Please try again.');
-            }
+      try {
+        await fetch(`/api/reports/window/${currentReportWindowId}/config`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ config })
         });
 
-        async function deleteWindow(windowId) {
-            if (!confirm('Are you sure you want to delete this chat window?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/windows/${windowId}`, {
-                    method: 'DELETE'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to delete window');
-                }
-
-                loadWindows(currentPatient.id);
-            } catch (error) {
-                console.error('Error deleting window:', error);
-                alert('Failed to delete window. It may have existing conversations.');
-            }
-        }
-
-        function formatDate(timestamp) {
-            return new Date(timestamp * 1000).toLocaleDateString();
-        }
-
-        async function generateReport(windowId) {
-            if (!confirm('Generate a basic report for this completed window?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/reports/window/${windowId}/generate`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to generate report');
-                }
-
-                const report = await response.json();
-                alert('Basic report generated successfully!');
-
-                // Refresh the windows to update the UI
-                loadWindows(currentPatient.id);
-            } catch (error) {
-                console.error('Error generating report:', error);
-                alert(`Failed to generate report: ${error.message}`);
-            }
-        }
-
-        let currentReportWindowId = null;
-
-        async function openReportConfigModal(windowId) {
-            currentReportWindowId = windowId;
-
-            try {
-                // Load current configuration for this window
-                const response = await fetch(`/api/reports/window/${windowId}/config`);
-                if (response.ok) {
-                    const config = await response.json();
-
-                    // Set checkbox states
-                    document.getElementById('config_ai_summary').checked = config.ai_summary !== false;
-                    document.getElementById('config_saved_messages').checked = config.saved_messages !== false;
-                    document.getElementById('config_descriptive_stats').checked = config.descriptive_stats !== false;
-                    document.getElementById('config_nlp_analysis').checked = config.nlp_analysis !== false;
-                }
-            } catch (error) {
-                console.error('Error loading report config:', error);
-                // Use defaults if loading fails
-                document.getElementById('config_ai_summary').checked = true;
-                document.getElementById('config_saved_messages').checked = true;
-                document.getElementById('config_descriptive_stats').checked = true;
-                document.getElementById('config_nlp_analysis').checked = true;
-            }
-
-            document.getElementById('reportConfigModal').classList.add('show');
-        }
-
-        function closeReportConfigModal() {
-            document.getElementById('reportConfigModal').classList.remove('show');
-            currentReportWindowId = null;
-        }
-
-        document.getElementById('reportConfigForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!currentReportWindowId) {
-                alert('No window selected');
-                return;
-            }
-
-            const config = {
-                ai_summary: document.getElementById('config_ai_summary').checked,
-                saved_messages: document.getElementById('config_saved_messages').checked,
-                descriptive_stats: document.getElementById('config_descriptive_stats').checked,
-                nlp_analysis: document.getElementById('config_nlp_analysis').checked
-            };
-
-            try {
-                // Save configuration
-                await fetch(`/api/reports/window/${currentReportWindowId}/config`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ config })
-                });
-
-                // Generate enhanced report
-                const response = await fetch(`/api/reports/window/${currentReportWindowId}/generate-enhanced`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ config })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to generate enhanced report');
-                }
-
-                const report = await response.json();
-                alert('Enhanced report generated successfully!');
-
-                closeReportConfigModal();
-                loadWindows(currentPatient.id);
-            } catch (error) {
-                console.error('Error generating enhanced report:', error);
-                alert(`Failed to generate enhanced report: ${error.message}`);
-            }
+        const res = await fetch(`/api/reports/window/${currentReportWindowId}/generate-enhanced`, {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ config })
         });
-
-        async function logout() {
-            await fetch('/logout');
-            window.location.href = '/login';
+        if (!res.ok) {
+          const err = await res.json(); throw new Error(err.error || 'Failed to generate enhanced report');
         }
+        await res.json();
+        alert('Enhanced report generated successfully!');
+        closeReportConfigModal();
+        loadWindows(currentPatient.id);
+      } catch (e) {
+        console.error('Error generating enhanced report:', e);
+        alert(`Failed to generate enhanced report: ${e.message}`);
+      }
+    });
 
-        // Initialize
-        async function initialize() {
-            await loadModels();
-            await loadSystemPrompts();
-            await loadPatients();
-        }
+    // ===== Auth =====
+    async function logout(){ await fetch('/logout'); window.location.href='/login'; }
 
-        initialize();
-    </script>
+    // ===== Init =====
+    (async function initialize(){
+      await loadModels();
+      await loadSystemPrompts();
+      await loadPatients();
+    })();
+  </script>
 </body>
 </html>
