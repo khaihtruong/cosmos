@@ -79,9 +79,22 @@ class LLMInterface:
         else:
             print("✗ Google API key not configured or invalid")
 
+        # Local Ollama
+        try:
+            response = requests.get('http://localhost:11434/api/tags', timeout=2)
+            if response.status_code == 200:
+                cls._provider_clients['local'] = True
+                models = response.json().get('models', [])
+                model_names = [m['name'] for m in models]
+                print(f"✓ Ollama local server detected with models: {model_names}")
+            else:
+                print("✗ Ollama server responded but with an error")
+        except requests.exceptions.RequestException:
+            print("✗ Ollama local server not available (run './setup_ollama.sh' to set up)")
+
         print("\n=== LLM Client Status ===")
         print(f"Initialized providers: {list(cls._provider_clients.keys())}")
-        for provider in ['openai', 'anthropic', 'google']:
+        for provider in ['openai', 'anthropic', 'google', 'local']:
             status = "✓ AVAILABLE" if provider in cls._provider_clients else "✗ NOT AVAILABLE"
             print(f"{provider}: {status}")
         print("========================\n")
@@ -174,9 +187,11 @@ class LLMInterface:
                 response = requests.post(
                     model.api_endpoint,
                     json={
+                        'model': model.model_identifier,  # Required by Ollama
                         'messages': formatted_messages,
                         'temperature': config.get('temperature', 0.7),
                         'max_tokens': config.get('max_tokens', 1000),
+                        'stream': False  # Disable streaming for simpler response handling
                     },
                     timeout=60,
                 )

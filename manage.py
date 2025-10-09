@@ -71,7 +71,8 @@ def initialize_database():
                       config=json.dumps({'temperature': 0.7, 'max_tokens': 1000})),
                 Model(name='Gemini 1.5 Pro', provider='google', model_identifier='gemini-1.5-pro',
                       config=json.dumps({'temperature': 0.7, 'max_tokens': 1000})),
-                Model(name='Local Llama', provider='local', api_endpoint='http://localhost:8000/v1/chat/completions',
+                Model(name='Local Llama 3.2 1B', provider='local', api_endpoint='http://localhost:11434/v1/chat/completions',
+                      model_identifier='llama3.2:1b',
                       config=json.dumps({'temperature': 0.7, 'max_tokens': 2000})),
             ]
             for m in models:
