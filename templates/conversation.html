@@ -692,8 +692,6 @@
                 const text = selection.toString();
                 const trimmedText = text.trim();
 
-                console.log('Selection:', text, 'Length:', trimmedText.length);
-
                 // Only show popup if we have text and selection is within messages area
                 if (trimmedText.length > 0) {
                     // Check if selection is within the messages container
@@ -772,17 +770,11 @@
                             selectedText = cleanText.trim();
                         }
 
-                        console.log('Raw text:', text);
-                        console.log('Clean text:', selectedText);
-                        console.log('Messages involved:', involvedMessages.length);
-
                         // Position popup below the selection
                         const rect = range.getBoundingClientRect();
                         const popupX = rect.left + (rect.width / 2);
                         const popupY = rect.bottom + window.scrollY + 5; // 5px below selection
 
-                        console.log('Showing popup at', popupX, popupY);
-                        console.log('Selected message IDs:', selectedMessageIds);
                         popup.style.display = 'block';
                         popup.style.left = popupX + 'px';
                         popup.style.top = popupY + 'px';
