@@ -34,10 +34,9 @@ class Model(db.Model):
         if not self.api_endpoint:
             return False
         try:
-            response = requests.get(
-                self.api_endpoint.replace('/v1/chat/completions', '/health'),
-                timeout=2
-            )
+            # Ollama uses /api/tags for health check
+            base_url = self.api_endpoint.replace('/v1/chat/completions', '')
+            response = requests.get(f"{base_url}/api/tags", timeout=2)
             return response.status_code == 200
         except Exception:
             return False

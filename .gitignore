@@ -43,5 +43,19 @@ htmlcov/
 .env
 .env.local
 
-# PDF/Report exports (optional - remove if you want to track them)
+# PDF/Report exports
 *.pdf
+
+# DEPLOYMENT FILES (ignore for now)
+DEPLOYMENT.md
+
+# AWS deployment files (ignore for now)
+.aws/
+
+# GitHub Actions workflows (ignore for now)
+.github/
+
+# Docker files (ignore for now)
+Dockerfile
+Dockerfile.ollama
+docker-compose.yml
