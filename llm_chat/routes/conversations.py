@@ -73,6 +73,7 @@ def view_conversation(conversation_id):
         abort(403)
 
     can_send_messages = conversation.user_id == current_user.id
+    is_provider = current_user.is_provider()
 
     # Check if conversation belongs to an expired window
     if conversation.window_id:
@@ -83,7 +84,7 @@ def view_conversation(conversation_id):
             if now > window.end_date or not window.is_active:
                 can_send_messages = False
 
-    return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages)
+    return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages, is_provider=is_provider)
 
 @conv_bp.route("/api/conversation/<int:conversation_id>")
 @login_required

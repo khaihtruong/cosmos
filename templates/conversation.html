@@ -432,7 +432,11 @@
             </div>
             {% else %}
             <div class="input-container" style="text-align: center; padding: 1rem; background: #f5f7fa; border-top: 1px solid #e0e0e0;">
+                {% if is_provider %}
                 <p style="color: #666; margin: 0;">🔒 Read-only view - Only the patient can send messages</p>
+                {% else %}
+                <p style="color: #666; margin: 0;">🔒 Read-only view - This conversation has ended</p>
+                {% endif %}
             </div>
             {% endif %}
         </div>
