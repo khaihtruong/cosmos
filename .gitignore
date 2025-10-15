@@ -43,7 +43,7 @@ htmlcov/
 .env
 .env.local
 
-# PDF/Report exports (optional - remove if you want to track them)
+# PDF/Report exports
 *.pdf
 
 # DEPLOYMENT FILES (ignore for now)
