@@ -149,12 +149,29 @@ def get_conversations():
 def get_conversations():
     conversations = current_user.conversations.order_by(Conversation.updated_at.desc()).all()
 
-    # (optional) keep only convos that actually have messages
-    conversations = [c for c in conversations if c.messages.count() > 0]
-
     payload = []
+    now = time.time()
+
     for c in conversations:
         msgs = c.messages.order_by(Message.timestamp).all()  # because lazy='dynamic'
+
+        # Determine if conversation is active (can still send messages)
+        is_active = True
+        window_end_date = None
+
+        if c.window_id:
+            window = ChatWindow.query.get(c.window_id)
+            if window:
+                window_end_date = window.end_date
+                # Conversation is inactive if window has ended or is not active
+                if now > window.end_date or not window.is_active:
+                    is_active = False
+
+        # Skip empty conversations only if they're inactive (past)
+        # Active conversations should show even if empty (user can still send messages)
+        if len(msgs) == 0 and not is_active:
+            continue
+
         payload.append({
             'id': c.id,
             'title': c.title or 'Untitled Conversation',
@@ -162,7 +179,9 @@ def get_conversations():
             'created_at': c.created_at,
             'updated_at': c.updated_at,
             'message_count': len(msgs),
-            'messages': [m.to_dict() for m in msgs]  # <-- include Message.content here
+            'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
+            'is_active': is_active,
+            'window_end_date': window_end_date
         })
     return jsonify(payload)
 
