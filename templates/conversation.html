@@ -114,6 +114,7 @@
             font-weight: bold;
             color: white;
             flex-shrink: 0;
+            user-select: none;
         }
         
         .message.user .message-avatar {
@@ -132,6 +133,7 @@
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: #333;
+            user-select: none;
         }
         
         .message-text {
@@ -204,6 +206,7 @@
             font-size: 0.75rem;
             color: #999;
             margin-top: 0.5rem;
+            user-select: none;
         }
         
         .typing-indicator {
@@ -331,17 +334,40 @@
             background: #f8f9fa;
             border-radius: 6px;
             font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
         }
-        
+
+        .saved-item:hover {
+            background: #e9ecef;
+        }
+
         .saved-item-text {
             color: #333;
             margin-bottom: 0.25rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
         }
-        
+
+        .saved-item-text.truncated {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            white-space: normal;
+        }
+
+        .saved-item-text.expanded {
+            display: block;
+        }
+
         .saved-item-note {
             color: #666;
             font-style: italic;
         }
+
         
         .error-banner {
             background: #fee;
@@ -574,34 +600,172 @@
         function formatTime(timestamp) {
             return new Date(timestamp * 1000).toLocaleString();
         }
-        
+
+        // Helper function to extract clean text from selection, excluding metadata
+        function extractCleanText(node) {
+            let text = '';
+
+            // Skip metadata elements
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.classList && (
+                    node.classList.contains('message-avatar') ||
+                    node.classList.contains('message-role') ||
+                    node.classList.contains('message-time')
+                )) {
+                    return '';
+                }
+            }
+
+            // Process text nodes
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent;
+            }
+
+            // Recursively process child nodes
+            if (node.childNodes) {
+                node.childNodes.forEach(child => {
+                    text += extractCleanText(child);
+                });
+            }
+
+            return text;
+        }
+
         // Handle text selection
         document.addEventListener('mouseup', function(e) {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-            
-            if (text.length > 0 && e.target.closest('.message-text')) {
-                selectedText = text;
-                
-                // Find which messages are involved
-                const range = selection.getRangeAt(0);
-                const messages = document.querySelectorAll('.message');
-                selectedMessageIds = [];
-                
-                messages.forEach(msg => {
-                    if (selection.containsNode(msg, true)) {
-                        const msgId = msg.dataset.messageId;
-                        if (msgId) selectedMessageIds.push(msgId);
-                    }
-                });
-                
-                // Show popup
+            // Don't process if clicking the save button
+            if (e.target.closest('#selectionPopup')) return;
+
+            // Small delay to ensure selection is finalized
+            setTimeout(function() {
+                const selection = window.getSelection();
                 const popup = document.getElementById('selectionPopup');
-                popup.style.display = 'block';
-                popup.style.left = e.pageX + 'px';
-                popup.style.top = e.pageY + 'px';
-            } else {
-                document.getElementById('selectionPopup').style.display = 'none';
+
+                if (selection.rangeCount === 0) {
+                    popup.style.display = 'none';
+                    return;
+                }
+
+                const text = selection.toString();
+                const trimmedText = text.trim();
+
+                console.log('Selection:', text, 'Length:', trimmedText.length);
+
+                // Only show popup if we have text and selection is within messages area
+                if (trimmedText.length > 0) {
+                    // Check if selection is within the messages container
+                    const range = selection.getRangeAt(0);
+                    const messagesContainer = document.getElementById('messagesContainer');
+
+                    let container = range.commonAncestorContainer;
+                    if (container.nodeType === Node.TEXT_NODE) {
+                        container = container.parentElement;
+                    }
+
+                    // Check if we're inside the messages area
+                    if (messagesContainer.contains(container)) {
+                        // Find which messages are involved
+                        const messages = document.querySelectorAll('.message');
+                        selectedMessageIds = [];
+                        let involvedMessages = [];
+
+                        messages.forEach(msg => {
+                            if (selection.containsNode(msg, true)) {
+                                const msgId = msg.dataset.messageId;
+                                if (msgId) {
+                                    selectedMessageIds.push(msgId);
+                                    involvedMessages.push(msg);
+                                }
+                            }
+                        });
+
+                        // Extract text preserving selection boundaries
+                        if (involvedMessages.length > 1) {
+                            // Multi-message selection - need to handle partial selections at start/end
+                            let parts = [];
+                            const rangeStart = range.startContainer;
+                            const rangeEnd = range.endContainer;
+
+                            involvedMessages.forEach((msg, idx) => {
+                                const role = msg.classList.contains('user') ? 'You' : 'Assistant';
+                                const messageText = msg.querySelector('.message-text');
+                                if (!messageText) return;
+
+                                // Check if this is first, middle, or last message in selection
+                                const isFirst = idx === 0;
+                                const isLast = idx === involvedMessages.length - 1;
+
+                                let textContent = '';
+
+                                if (isFirst && isLast) {
+                                    // Selection within single message (shouldn't happen in multi-message)
+                                    textContent = selection.toString().trim();
+                                } else if (isFirst) {
+                                    // First message - get from selection start to end of message
+                                    const tempRange = document.createRange();
+                                    tempRange.setStart(rangeStart, range.startOffset);
+                                    tempRange.setEndAfter(messageText.lastChild || messageText);
+                                    textContent = tempRange.toString().trim();
+                                } else if (isLast) {
+                                    // Last message - get from start of message to selection end
+                                    const tempRange = document.createRange();
+                                    tempRange.setStartBefore(messageText.firstChild || messageText);
+                                    tempRange.setEnd(rangeEnd, range.endOffset);
+                                    textContent = tempRange.toString().trim();
+                                } else {
+                                    // Middle message - get entire message text
+                                    textContent = messageText.textContent.trim();
+                                }
+
+                                if (textContent) {
+                                    parts.push(`[${role}]: ${textContent}`);
+                                }
+                            });
+                            selectedText = parts.join('\n\n');
+                        } else {
+                            // Single message - just extract clean text
+                            const fragment = range.cloneContents();
+                            let cleanText = extractCleanText(fragment);
+                            selectedText = cleanText.trim();
+                        }
+
+                        console.log('Raw text:', text);
+                        console.log('Clean text:', selectedText);
+                        console.log('Messages involved:', involvedMessages.length);
+
+                        // Position popup below the selection
+                        const rect = range.getBoundingClientRect();
+                        const popupX = rect.left + (rect.width / 2);
+                        const popupY = rect.bottom + window.scrollY + 5; // 5px below selection
+
+                        console.log('Showing popup at', popupX, popupY);
+                        console.log('Selected message IDs:', selectedMessageIds);
+                        popup.style.display = 'block';
+                        popup.style.left = popupX + 'px';
+                        popup.style.top = popupY + 'px';
+                        popup.style.transform = 'translateX(-50%)'; // Center horizontally
+                    } else {
+                        popup.style.display = 'none';
+                    }
+                } else {
+                    popup.style.display = 'none';
+                }
+            }, 10);
+        });
+
+        // Hide popup when selection is cleared
+        document.addEventListener('selectionchange', function() {
+            const selection = window.getSelection();
+            const popup = document.getElementById('selectionPopup');
+
+            // Don't hide if we're interacting with the popup
+            if (document.activeElement && document.activeElement.closest('#selectionPopup')) {
+                return;
+            }
+
+            // Hide popup if selection is empty
+            if (selection.toString().trim().length === 0) {
+                popup.style.display = 'none';
             }
         });
         
@@ -636,22 +800,41 @@
             try {
                 const response = await fetch('/api/selections');
                 const selections = await response.json();
-                
+
                 const container = document.getElementById('savedSelections');
                 const conversationSelections = selections.filter(s => s.conversation_id === conversationId);
-                
+
                 if (conversationSelections.length === 0) {
                     container.innerHTML = '<p style="color: #666; font-size: 0.9rem;">No saved selections yet</p>';
                 } else {
-                    container.innerHTML = conversationSelections.map(sel => `
-                        <div class="saved-item">
-                            <div class="saved-item-text">"${sel.text.substring(0, 100)}${sel.text.length > 100 ? '...' : ''}"</div>
-                            ${sel.note ? `<div class="saved-item-note">${sel.note}</div>` : ''}
-                        </div>
-                    `).join('');
+                    container.innerHTML = conversationSelections.map((sel, index) => {
+                        const isLong = sel.text.length > 100;
+                        return `<div class="saved-item" onclick="toggleSelection(${index})"><div class="saved-item-text ${isLong ? 'truncated' : ''}" id="selection-${index}" data-full-text="${escapeHtml(sel.text)}">"${escapeHtml(isLong ? sel.text.substring(0, 100) + '...' : sel.text)}"</div>${sel.note ? `<div class="saved-item-note">${escapeHtml(sel.note)}</div>` : ''}</div>`;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading selections:', error);
+            }
+        }
+
+        function toggleSelection(index) {
+            const textEl = document.getElementById(`selection-${index}`);
+
+            if (!textEl) return;
+
+            const isExpanded = textEl.classList.contains('expanded');
+            const fullText = textEl.dataset.fullText;
+
+            if (isExpanded) {
+                // Collapse
+                textEl.classList.remove('expanded');
+                textEl.classList.add('truncated');
+                textEl.textContent = `"${fullText.substring(0, 100)}..."`;
+            } else {
+                // Expand
+                textEl.classList.remove('truncated');
+                textEl.classList.add('expanded');
+                textEl.textContent = `"${fullText}"`;
             }
         }
         

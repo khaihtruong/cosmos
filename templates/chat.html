@@ -83,10 +83,15 @@
             margin-right: 20%;
         }
         
+        .message-content {
+            user-select: text;
+        }
+
         .message-meta {
             font-size: 0.75rem;
             opacity: 0.7;
             margin-top: 0.25rem;
+            user-select: none;
         }
         
         .input-area {
@@ -247,31 +252,109 @@
         
         // Handle text selection
         document.addEventListener('mouseup', function(e) {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-            
-            if (text.length > 0) {
-                selectedText = text;
-                
-                // Find which messages are involved
-                const range = selection.getRangeAt(0);
-                const messages = document.querySelectorAll('.message');
-                selectedMessageIds = [];
-                
-                messages.forEach(msg => {
-                    if (selection.containsNode(msg, true)) {
-                        const msgId = msg.dataset.messageId;
-                        if (msgId) selectedMessageIds.push(msgId);
-                    }
-                });
-                
-                // Show popup
+            // Don't process if clicking the save button
+            if (e.target.closest('#selectionPopup')) return;
+
+            // Small delay to ensure selection is finalized
+            setTimeout(function() {
+                const selection = window.getSelection();
                 const popup = document.getElementById('selectionPopup');
-                popup.style.display = 'block';
-                popup.style.left = e.pageX + 'px';
-                popup.style.top = e.pageY + 'px';
-            } else {
-                document.getElementById('selectionPopup').style.display = 'none';
+
+                if (selection.rangeCount === 0) {
+                    popup.style.display = 'none';
+                    return;
+                }
+
+                // Get the selected range
+                const range = selection.getRangeAt(0);
+
+                // Check if selection is within messages area
+                const messagesDiv = document.getElementById('messages');
+                if (!messagesDiv.contains(range.commonAncestorContainer)) {
+                    popup.style.display = 'none';
+                    return;
+                }
+
+                // Extract text, filtering out metadata
+                let extractedText = '';
+                const fragment = range.cloneContents();
+
+                // Walk through all text nodes and element nodes
+                function extractTextFromNode(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        // Check if this text node is inside message-meta
+                        let parent = node.parentElement;
+                        while (parent && parent !== messagesDiv) {
+                            if (parent.classList && parent.classList.contains('message-meta')) {
+                                return ''; // Skip metadata
+                            }
+                            parent = parent.parentElement;
+                        }
+                        return node.textContent;
+                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                        // Skip message-meta elements entirely
+                        if (node.classList && node.classList.contains('message-meta')) {
+                            return '';
+                        }
+                        // Recursively process child nodes
+                        let text = '';
+                        node.childNodes.forEach(child => {
+                            text += extractTextFromNode(child);
+                        });
+                        return text;
+                    }
+                    return '';
+                }
+
+                extractedText = extractTextFromNode(fragment);
+                const trimmedText = extractedText.trim();
+
+                // Debug logging
+                console.log('Raw selection:', selection.toString());
+                console.log('Extracted text:', extractedText);
+                console.log('Trimmed text:', trimmedText);
+
+                if (trimmedText.length > 0) {
+                    selectedText = trimmedText;
+
+                    // Find which messages are involved
+                    const messages = document.querySelectorAll('.message');
+                    selectedMessageIds = [];
+
+                    messages.forEach(msg => {
+                        if (selection.containsNode(msg, true)) {
+                            const msgId = msg.dataset.messageId;
+                            if (msgId) selectedMessageIds.push(msgId);
+                        }
+                    });
+
+                    // Show popup
+                    popup.style.display = 'block';
+                    popup.style.left = e.pageX + 'px';
+                    popup.style.top = e.pageY + 'px';
+                } else {
+                    popup.style.display = 'none';
+                }
+            }, 10);
+        });
+
+        // Hide popup when selection is cleared
+        document.addEventListener('selectionchange', function() {
+            const selection = window.getSelection();
+            const popup = document.getElementById('selectionPopup');
+
+            // Don't hide if we're interacting with the popup
+            if (document.activeElement && document.activeElement.closest('#selectionPopup')) {
+                return;
+            }
+
+            const selectionText = selection.toString().trim();
+            console.log('Selection changed, text length:', selectionText.length);
+
+            // Hide popup if selection is empty
+            if (selectionText.length === 0) {
+                console.log('Hiding popup - selection cleared');
+                popup.style.display = 'none';
             }
         });
         
@@ -334,16 +417,17 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             if (messageId) messageDiv.dataset.messageId = messageId;
-            
+
             const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
             contentDiv.textContent = content;
             messageDiv.appendChild(contentDiv);
-            
+
             const metaDiv = document.createElement('div');
             metaDiv.className = 'message-meta';
             metaDiv.textContent = new Date().toLocaleTimeString();
             messageDiv.appendChild(metaDiv);
-            
+
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
