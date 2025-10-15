@@ -3,7 +3,7 @@ import threading
 from datetime import datetime
 from llm_chat.models import ChatWindow, Report
 from llm_chat.extensions import db
-from report.unified_report_generator import UnifiedReportGenerator
+from report.generator import UnifiedReportGenerator
 
 
 class ReportScheduler:

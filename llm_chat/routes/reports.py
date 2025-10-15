@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, render_template, abort, request, send_file
 from flask_login import login_required, current_user
 from ..models import Report, ChatWindow, User
 from ..services.report_scheduler import ReportScheduler
-from report.unified_report_generator import UnifiedReportGenerator
+from report.generator import UnifiedReportGenerator
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
 
@@ -287,7 +287,7 @@ def get_live_report(window_id):
 @login_required
 def get_report_capabilities():
     """Get available report capabilities (like PDF generation)"""
-    from report.unified_report_generator import WEASYPRINT_AVAILABLE
+    from report.generator import WEASYPRINT_AVAILABLE
 
     return jsonify({
         'pdf_generation': WEASYPRINT_AVAILABLE,
