@@ -94,6 +94,14 @@ def get_conversation_data(conversation_id):
         abort(403)
 
     messages = conversation.messages.order_by(Message.timestamp).all()
+
+    # Get window info if conversation belongs to a window
+    window_end_date = None
+    if conversation.window_id:
+        window = ChatWindow.query.get(conversation.window_id)
+        if window:
+            window_end_date = window.end_date
+
     return jsonify({
         'id': conversation.id,
         'title': conversation.title or 'New Conversation',
@@ -105,6 +113,7 @@ def get_conversation_data(conversation_id):
             'id': conversation.system_prompt_id,
             'name': SystemPrompt.query.get(conversation.system_prompt_id).name if conversation.system_prompt_id else None
         },
+        'window_end_date': window_end_date,
         'messages': [m.to_dict() for m in messages]
     })
 

@@ -380,6 +380,35 @@
         .error-banner.show {
             display: block;
         }
+
+        .time-remaining {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f5f7fa;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .time-remaining .time-label {
+            color: #666;
+        }
+
+        .time-remaining .time-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .time-remaining.warning .time-value {
+            color: #DC143C;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body>
@@ -396,15 +425,19 @@
                 <span class="info-label">Model:</span>
                 <span class="info-value" id="modelName">Loading...</span>
             </div>
-            <div class="info-item">
+            <div class="info-item" id="promptInfo">
                 <span class="info-label">Prompt:</span>
                 <span class="info-value" id="promptName">Loading...</span>
             </div>
+            <div class="time-remaining" id="timeRemaining" style="display: none;">
+                <span class="time-label">Time left:</span>
+                <span class="time-value" id="timeValue"></span>
+            </div>
         </div>
     </div>
-    
+
     <div class="error-banner" id="errorBanner"></div>
-    
+
     <div class="chat-container">
         <div class="chat-main">
             <div class="messages-container" id="messagesContainer">
@@ -459,6 +492,7 @@
         let selectedText = '';
         let selectedMessageIds = [];
         let conversationData = null;
+        let countdownInterval = null;
         
         async function loadConversationData() {
             try {
@@ -473,7 +507,12 @@
                 document.getElementById('conversationTitle').textContent = conversationData.title;
                 document.getElementById('modelName').textContent = conversationData.model.name;
                 document.getElementById('promptName').textContent = conversationData.system_prompt ? conversationData.system_prompt.name : 'Default';
-                
+
+                // Start countdown timer if window has end date
+                if (conversationData.window_end_date) {
+                    startCountdown(conversationData.window_end_date);
+                }
+
                 // Load messages
                 const container = document.getElementById('messagesContainer');
                 container.innerHTML = conversationData.messages.map(msg => `
@@ -851,10 +890,67 @@
             }, 5000);
         }
         
+        function startCountdown(endTimestamp) {
+            const timerEl = document.getElementById('timeRemaining');
+            const timeValueEl = document.getElementById('timeValue');
+            const promptInfoEl = document.getElementById('promptInfo');
+
+            // Hide prompt info and show timer
+            if (promptInfoEl) {
+                promptInfoEl.style.display = 'none';
+            }
+            timerEl.style.display = 'flex';
+
+            function updateTimer() {
+                const now = Date.now() / 1000; // Current time in seconds
+                const timeLeft = endTimestamp - now;
+
+                if (timeLeft <= 0) {
+                    timeValueEl.textContent = 'Ended';
+                    timerEl.classList.add('warning');
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                    }
+                    return;
+                }
+
+                // Calculate time remaining
+                const days = Math.floor(timeLeft / 86400);
+                const hours = Math.floor((timeLeft % 86400) / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                const seconds = Math.floor(timeLeft % 60);
+
+                // Format display
+                let displayText = '';
+                if (days > 0) {
+                    displayText = `${days}d ${hours}h`;
+                } else if (hours > 0) {
+                    displayText = `${hours}h ${minutes}m`;
+                } else if (minutes > 0) {
+                    displayText = `${minutes}m ${seconds}s`;
+                } else {
+                    displayText = `${seconds}s`;
+                }
+
+                timeValueEl.textContent = displayText;
+
+                // Add warning class if less than 1 hour remaining
+                if (timeLeft < 3600) {
+                    timerEl.classList.add('warning');
+                } else {
+                    timerEl.classList.remove('warning');
+                }
+            }
+
+            // Update immediately and then every second
+            updateTimer();
+            countdownInterval = setInterval(updateTimer, 1000);
+        }
+
         function goBack() {
             window.location.href = '/dashboard';
         }
-        
+
         async function editTitle() {
             const newTitle = prompt('Enter new conversation title:', conversationData?.title || '');
             if (newTitle && newTitle.trim()) {
@@ -883,12 +979,30 @@
         // Initialize
         loadConversationData();
         loadSavedSelections();
-        
+
         // Auto-resize textarea
         const textarea = document.getElementById('messageInput');
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        });
+
+        // Cleanup when navigating away (single-page app behavior)
+        window.addEventListener('pagehide', function() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
         });
     </script>
 </body>
