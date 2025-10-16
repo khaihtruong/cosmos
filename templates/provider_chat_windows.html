@@ -585,13 +585,17 @@
       };
 
       const payload = {
-        patient_id: currentPatient.id,
         title: document.getElementById('windowTitle').value,
         description: document.getElementById('windowDescription').value,
         start_date: new Date(document.getElementById('startDate').value).getTime() / 1000,
         end_date: new Date(document.getElementById('endDate').value).getTime() / 1000,
         templates, report_config
       };
+
+      // Only include patient_id when creating (not editing)
+      if (!currentWindowId) {
+        payload.patient_id = currentPatient.id;
+      }
 
       try {
         const url = currentWindowId ? `/api/windows/${currentWindowId}` : '/api/windows/';
