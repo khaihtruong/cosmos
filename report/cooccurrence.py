@@ -1,8 +1,11 @@
+import matplotlib.pyplot as plt
+import networkx as nx
 import nltk
 #nltk.download('punkt_tab')
 #nltk.download('stopwords')
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -22,10 +25,15 @@ def main():
     # Create the co-occurence matrix
     co_occurrences = create_cooccurrence_matrix(tokenised_sentences)
 
+    print(co_occurrences) 
+
     # Create a table of the results, substituting any missing data with N/A
-    df = pd.DataFrame(co_occurrences).fillna(value="N/A")
+    df = pd.DataFrame(co_occurrences).fillna(value=0)
 
     print(df)
+
+    create_graph(co_occurrences, df)
+    
 
 
 def clean_text(text):
@@ -70,6 +78,24 @@ def create_cooccurrence_matrix(tokenised_sentences):
                         co_occurrences[word][i] += 1
 
     return co_occurrences
+
+
+def create_graph(dictionary, df):
+
+    node_strength = df.sum(axis=1)
+    #node_sizes = [node_strength[word] for word in dictionary]
+
+    G = nx.Graph()
+    for key in dictionary:
+        for cooccurrence in dictionary[key]:
+            proximity = dictionary[key][cooccurrence]**2
+            G.add_edge(key, cooccurrence, weight=proximity) #node_size=node_sizes[0] ** 10)
+
+    
+
+    nx.draw_networkx(G)
+
+    plt.show()
 
 
 if __name__ == "__main__":
