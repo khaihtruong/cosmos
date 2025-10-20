@@ -1,58 +1,77 @@
 # LLM Chat
 
-LLM Chat is a chatbot leveraging industry-standard LLM models (OpenAI, Gemini, Anthropic) to converse and capture patient's behavior in between therapy session. This would allow the clinician to have a good understand of their patient.
+LLM Chat is a chatbot leveraging industry-standard LLM models (OpenAI, Gemini, Anthropic) to converse and capture patient's behavior in between therapy sessions. This allows clinicians to have a good understanding of their patients.
 
-## Installation
+## Quick Start for Mac
 
-### 1. Install Python Dependencies
+### Prerequisites
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install necessary packages.
+1. **Open Terminal** (press `Cmd + Space`, type "Terminal", and press Enter)
+
+2. **Install Homebrew** (if you don't have it):
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+3. **Install Python and Git**:
+   ```bash
+   brew install python@3.11 git
+   ```
+
+### Installation
+
+1. **Download the project**:
+   ```bash
+   cd ~/Desktop
+   git clone https://github.com/yourusername/cosmos.git
+   cd cosmos
+   ```
+
+2. **Set up Python environment**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+   **Note**: Run `source .venv/bin/activate` each time you open a new Terminal window to work on this project.
+
+3. **Configure API keys**:
+   ```bash
+   cp .env.example .env
+   open -a TextEdit .env
+   ```
+
+   In TextEdit, add at least one API key and save the file. The app will automatically load it when you start.
+
+4. **Start the application**:
+   ```bash
+   python manage.py
+   ```
+
+   Open your browser and go to: `http://localhost:5000`
+
+### (Optional) Local LLM with Ollama
+
+For complete privacy without cloud APIs:
 
 ```bash
-pip install -r requirements.txt
-```
-
-### 2. Configure API Keys
-
-Copy `.env.example` to `.env` and add your API keys:
-
-```bash
-# OpenAI API Key (optional)
-OPENAI_API_KEY=your_openai_key_here
-
-# Anthropic API Key (optional)
-ANTHROPIC_API_KEY=your_anthropic_key_here
-
-# Google API Key (optional)
-GOOGLE_API_KEY=your_google_api_key_here
-```
-
-### 3. (Optional) Setup Local LLM with Ollama
-
-For complete privacy and offline usage, you can run a local LLM:
-
-```bash
-# Run the setup script (macOS only)
-./setup_ollama.sh
-
-# Or install manually:
 brew install ollama
-ollama serve
-ollama pull llama3.2:1b
+ollama serve              # Keep this running in one Terminal window
+ollama pull llama3.2:1b   # Run in a new Terminal window
 ```
 
-The local model will be available at `http://localhost:11434/v1/chat/completions`
+**Trade-offs**: Complete privacy and free to use, but slower responses (30-60s vs 5-10s) and lower quality than cloud models.
 
-**Note**: Local models provide complete data privacy but with lower quality responses than cloud APIs. Perfect for development and privacy-sensitive applications.
+### Updating the Code
 
-### 4. Start the Application
-
-To start the program run the following command from the root of the project:
 ```bash
+cd ~/Desktop/cosmos
+git pull
+source .venv/bin/activate
+pip install -r requirements.txt
 python manage.py
 ```
-
-The application will automatically detect and initialize available LLM providers (OpenAI, Anthropic, Google, and local Ollama).
 
 ## Features
 
