@@ -114,6 +114,7 @@
             font-weight: bold;
             color: white;
             flex-shrink: 0;
+            user-select: none;
         }
         
         .message.user .message-avatar {
@@ -132,6 +133,7 @@
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: #333;
+            user-select: none;
         }
         
         .message-text {
@@ -204,6 +206,7 @@
             font-size: 0.75rem;
             color: #999;
             margin-top: 0.5rem;
+            user-select: none;
         }
         
         .typing-indicator {
@@ -331,17 +334,40 @@
             background: #f8f9fa;
             border-radius: 6px;
             font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
         }
-        
+
+        .saved-item:hover {
+            background: #e9ecef;
+        }
+
         .saved-item-text {
             color: #333;
             margin-bottom: 0.25rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
         }
-        
+
+        .saved-item-text.truncated {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            white-space: normal;
+        }
+
+        .saved-item-text.expanded {
+            display: block;
+        }
+
         .saved-item-note {
             color: #666;
             font-style: italic;
         }
+
         
         .error-banner {
             background: #fee;
@@ -354,6 +380,35 @@
         .error-banner.show {
             display: block;
         }
+
+        .time-remaining {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f5f7fa;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .time-remaining .time-label {
+            color: #666;
+        }
+
+        .time-remaining .time-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .time-remaining.warning .time-value {
+            color: #DC143C;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body>
@@ -361,24 +416,25 @@
         <div class="header-left">
             <button class="back-btn" onclick="goBack()">← Back</button>
             <h2 id="conversationTitle">Loading...</h2>
-            {% if can_send_messages %}
-            <button id="editTitleBtn" onclick="editTitle()" style="margin-left: 1rem; padding: 0.25rem 0.5rem; background: transparent; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">✏️</button>
-            {% endif %}
         </div>
         <div class="conversation-info">
             <div class="info-item">
                 <span class="info-label">Model:</span>
                 <span class="info-value" id="modelName">Loading...</span>
             </div>
-            <div class="info-item">
+            <div class="info-item" id="promptInfo">
                 <span class="info-label">Prompt:</span>
                 <span class="info-value" id="promptName">Loading...</span>
             </div>
+            <div class="time-remaining" id="timeRemaining" style="display: none;">
+                <span class="time-label">Time left:</span>
+                <span class="time-value" id="timeValue"></span>
+            </div>
         </div>
     </div>
-    
+
     <div class="error-banner" id="errorBanner"></div>
-    
+
     <div class="chat-container">
         <div class="chat-main">
             <div class="messages-container" id="messagesContainer">
@@ -406,7 +462,11 @@
             </div>
             {% else %}
             <div class="input-container" style="text-align: center; padding: 1rem; background: #f5f7fa; border-top: 1px solid #e0e0e0;">
+                {% if is_provider %}
                 <p style="color: #666; margin: 0;">🔒 Read-only view - Only the patient can send messages</p>
+                {% else %}
+                <p style="color: #666; margin: 0;">🔒 Read-only view - This conversation has ended</p>
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -429,6 +489,7 @@
         let selectedText = '';
         let selectedMessageIds = [];
         let conversationData = null;
+        let countdownInterval = null;
         
         async function loadConversationData() {
             try {
@@ -443,7 +504,12 @@
                 document.getElementById('conversationTitle').textContent = conversationData.title;
                 document.getElementById('modelName').textContent = conversationData.model.name;
                 document.getElementById('promptName').textContent = conversationData.system_prompt ? conversationData.system_prompt.name : 'Default';
-                
+
+                // Start countdown timer if window has end date
+                if (conversationData.window_end_date) {
+                    startCountdown(conversationData.window_end_date);
+                }
+
                 // Load messages
                 const container = document.getElementById('messagesContainer');
                 container.innerHTML = conversationData.messages.map(msg => `
@@ -574,34 +640,164 @@
         function formatTime(timestamp) {
             return new Date(timestamp * 1000).toLocaleString();
         }
-        
+
+        // Helper function to extract clean text from selection, excluding metadata
+        function extractCleanText(node) {
+            let text = '';
+
+            // Skip metadata elements
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.classList && (
+                    node.classList.contains('message-avatar') ||
+                    node.classList.contains('message-role') ||
+                    node.classList.contains('message-time')
+                )) {
+                    return '';
+                }
+            }
+
+            // Process text nodes
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent;
+            }
+
+            // Recursively process child nodes
+            if (node.childNodes) {
+                node.childNodes.forEach(child => {
+                    text += extractCleanText(child);
+                });
+            }
+
+            return text;
+        }
+
         // Handle text selection
         document.addEventListener('mouseup', function(e) {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-            
-            if (text.length > 0 && e.target.closest('.message-text')) {
-                selectedText = text;
-                
-                // Find which messages are involved
-                const range = selection.getRangeAt(0);
-                const messages = document.querySelectorAll('.message');
-                selectedMessageIds = [];
-                
-                messages.forEach(msg => {
-                    if (selection.containsNode(msg, true)) {
-                        const msgId = msg.dataset.messageId;
-                        if (msgId) selectedMessageIds.push(msgId);
-                    }
-                });
-                
-                // Show popup
+            // Don't process if clicking the save button
+            if (e.target.closest('#selectionPopup')) return;
+
+            // Small delay to ensure selection is finalized
+            setTimeout(function() {
+                const selection = window.getSelection();
                 const popup = document.getElementById('selectionPopup');
-                popup.style.display = 'block';
-                popup.style.left = e.pageX + 'px';
-                popup.style.top = e.pageY + 'px';
-            } else {
-                document.getElementById('selectionPopup').style.display = 'none';
+
+                if (selection.rangeCount === 0) {
+                    popup.style.display = 'none';
+                    return;
+                }
+
+                const text = selection.toString();
+                const trimmedText = text.trim();
+
+                // Only show popup if we have text and selection is within messages area
+                if (trimmedText.length > 0) {
+                    // Check if selection is within the messages container
+                    const range = selection.getRangeAt(0);
+                    const messagesContainer = document.getElementById('messagesContainer');
+
+                    let container = range.commonAncestorContainer;
+                    if (container.nodeType === Node.TEXT_NODE) {
+                        container = container.parentElement;
+                    }
+
+                    // Check if we're inside the messages area
+                    if (messagesContainer.contains(container)) {
+                        // Find which messages are involved
+                        const messages = document.querySelectorAll('.message');
+                        selectedMessageIds = [];
+                        let involvedMessages = [];
+
+                        messages.forEach(msg => {
+                            if (selection.containsNode(msg, true)) {
+                                const msgId = msg.dataset.messageId;
+                                if (msgId) {
+                                    selectedMessageIds.push(msgId);
+                                    involvedMessages.push(msg);
+                                }
+                            }
+                        });
+
+                        // Extract text preserving selection boundaries
+                        if (involvedMessages.length > 1) {
+                            // Multi-message selection - need to handle partial selections at start/end
+                            let parts = [];
+                            const rangeStart = range.startContainer;
+                            const rangeEnd = range.endContainer;
+
+                            involvedMessages.forEach((msg, idx) => {
+                                const role = msg.classList.contains('user') ? 'You' : 'Assistant';
+                                const messageText = msg.querySelector('.message-text');
+                                if (!messageText) return;
+
+                                // Check if this is first, middle, or last message in selection
+                                const isFirst = idx === 0;
+                                const isLast = idx === involvedMessages.length - 1;
+
+                                let textContent = '';
+
+                                if (isFirst && isLast) {
+                                    // Selection within single message (shouldn't happen in multi-message)
+                                    textContent = selection.toString().trim();
+                                } else if (isFirst) {
+                                    // First message - get from selection start to end of message
+                                    const tempRange = document.createRange();
+                                    tempRange.setStart(rangeStart, range.startOffset);
+                                    tempRange.setEndAfter(messageText.lastChild || messageText);
+                                    textContent = tempRange.toString().trim();
+                                } else if (isLast) {
+                                    // Last message - get from start of message to selection end
+                                    const tempRange = document.createRange();
+                                    tempRange.setStartBefore(messageText.firstChild || messageText);
+                                    tempRange.setEnd(rangeEnd, range.endOffset);
+                                    textContent = tempRange.toString().trim();
+                                } else {
+                                    // Middle message - get entire message text
+                                    textContent = messageText.textContent.trim();
+                                }
+
+                                if (textContent) {
+                                    parts.push(`[${role}]: ${textContent}`);
+                                }
+                            });
+                            selectedText = parts.join('\n\n');
+                        } else {
+                            // Single message - just extract clean text
+                            const fragment = range.cloneContents();
+                            let cleanText = extractCleanText(fragment);
+                            selectedText = cleanText.trim();
+                        }
+
+                        // Position popup below the selection
+                        const rect = range.getBoundingClientRect();
+                        const popupX = rect.left + (rect.width / 2);
+                        const popupY = rect.bottom + window.scrollY + 5; // 5px below selection
+
+                        popup.style.display = 'block';
+                        popup.style.left = popupX + 'px';
+                        popup.style.top = popupY + 'px';
+                        popup.style.transform = 'translateX(-50%)'; // Center horizontally
+                    } else {
+                        popup.style.display = 'none';
+                    }
+                } else {
+                    popup.style.display = 'none';
+                }
+            }, 10);
+        });
+
+        // Hide popup when selection is cleared
+        document.addEventListener('selectionchange', function() {
+            const selection = window.getSelection();
+            const popup = document.getElementById('selectionPopup');
+
+            // Don't hide if we're interacting with the popup
+            if (document.activeElement && document.activeElement.closest('#selectionPopup')) {
+                return;
+            }
+
+            // Hide popup if selection is empty
+            if (selection.toString().trim().length === 0) {
+                popup.style.display = 'none';
             }
         });
         
@@ -636,22 +832,41 @@
             try {
                 const response = await fetch('/api/selections');
                 const selections = await response.json();
-                
+
                 const container = document.getElementById('savedSelections');
                 const conversationSelections = selections.filter(s => s.conversation_id === conversationId);
-                
+
                 if (conversationSelections.length === 0) {
                     container.innerHTML = '<p style="color: #666; font-size: 0.9rem;">No saved selections yet</p>';
                 } else {
-                    container.innerHTML = conversationSelections.map(sel => `
-                        <div class="saved-item">
-                            <div class="saved-item-text">"${sel.text.substring(0, 100)}${sel.text.length > 100 ? '...' : ''}"</div>
-                            ${sel.note ? `<div class="saved-item-note">${sel.note}</div>` : ''}
-                        </div>
-                    `).join('');
+                    container.innerHTML = conversationSelections.map((sel, index) => {
+                        const isLong = sel.text.length > 100;
+                        return `<div class="saved-item" onclick="toggleSelection(${index})"><div class="saved-item-text ${isLong ? 'truncated' : ''}" id="selection-${index}" data-full-text="${escapeHtml(sel.text)}">"${escapeHtml(isLong ? sel.text.substring(0, 100) + '...' : sel.text)}"</div>${sel.note ? `<div class="saved-item-note">${escapeHtml(sel.note)}</div>` : ''}</div>`;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading selections:', error);
+            }
+        }
+
+        function toggleSelection(index) {
+            const textEl = document.getElementById(`selection-${index}`);
+
+            if (!textEl) return;
+
+            const isExpanded = textEl.classList.contains('expanded');
+            const fullText = textEl.dataset.fullText;
+
+            if (isExpanded) {
+                // Collapse
+                textEl.classList.remove('expanded');
+                textEl.classList.add('truncated');
+                textEl.textContent = `"${fullText.substring(0, 100)}..."`;
+            } else {
+                // Expand
+                textEl.classList.remove('truncated');
+                textEl.classList.add('expanded');
+                textEl.textContent = `"${fullText}"`;
             }
         }
         
@@ -664,10 +879,67 @@
             }, 5000);
         }
         
+        function startCountdown(endTimestamp) {
+            const timerEl = document.getElementById('timeRemaining');
+            const timeValueEl = document.getElementById('timeValue');
+            const promptInfoEl = document.getElementById('promptInfo');
+
+            // Hide prompt info and show timer
+            if (promptInfoEl) {
+                promptInfoEl.style.display = 'none';
+            }
+            timerEl.style.display = 'flex';
+
+            function updateTimer() {
+                const now = Date.now() / 1000; // Current time in seconds
+                const timeLeft = endTimestamp - now;
+
+                if (timeLeft <= 0) {
+                    timeValueEl.textContent = 'Ended';
+                    timerEl.classList.add('warning');
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                    }
+                    return;
+                }
+
+                // Calculate time remaining
+                const days = Math.floor(timeLeft / 86400);
+                const hours = Math.floor((timeLeft % 86400) / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                const seconds = Math.floor(timeLeft % 60);
+
+                // Format display
+                let displayText = '';
+                if (days > 0) {
+                    displayText = `${days}d ${hours}h`;
+                } else if (hours > 0) {
+                    displayText = `${hours}h ${minutes}m`;
+                } else if (minutes > 0) {
+                    displayText = `${minutes}m ${seconds}s`;
+                } else {
+                    displayText = `${seconds}s`;
+                }
+
+                timeValueEl.textContent = displayText;
+
+                // Add warning class if less than 1 hour remaining
+                if (timeLeft < 3600) {
+                    timerEl.classList.add('warning');
+                } else {
+                    timerEl.classList.remove('warning');
+                }
+            }
+
+            // Update immediately and then every second
+            updateTimer();
+            countdownInterval = setInterval(updateTimer, 1000);
+        }
+
         function goBack() {
             window.location.href = '/dashboard';
         }
-        
+
         async function editTitle() {
             const newTitle = prompt('Enter new conversation title:', conversationData?.title || '');
             if (newTitle && newTitle.trim()) {
@@ -696,12 +968,30 @@
         // Initialize
         loadConversationData();
         loadSavedSelections();
-        
+
         // Auto-resize textarea
         const textarea = document.getElementById('messageInput');
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        });
+
+        // Cleanup when navigating away (single-page app behavior)
+        window.addEventListener('pagehide', function() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
         });
     </script>
 </body>
