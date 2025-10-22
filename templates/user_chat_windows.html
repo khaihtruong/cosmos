@@ -225,28 +225,23 @@
       const hasMore = fullText.length > SELECTION_PREVIEW_LIMIT;
       const noteText = sel.note || '';
 
-      const fade = hasMore ? `<div class="selection-fade pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white via-white/70 to-transparent"></div>` : '';
-      const textClasses = 'selection-text relative whitespace-pre-wrap text-slate-800';
+      const fade = hasMore ? `<div class="selection-fade pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white to-transparent"></div>` : '';
+      const textClasses = 'selection-text whitespace-pre-wrap text-slate-800 leading-tight';
       const toggleBtn = hasMore ? `<button type="button"
               data-action="toggle-full"
               class="selection-toggle text-xs font-medium text-indigo-600 transition hover:text-indigo-700"
-              onclick="toggleSelection(${sel.id})">See more</button>` : '<span class="text-xs text-slate-400">&nbsp;</span>';
+              onclick="toggleSelection(${sel.id})">See more</button>` : '';
 
       return `
-        <div class="selection-item px-5 py-4 text-sm text-slate-700" data-selection-id="${sel.id}">
-          <div class="min-w-0">
-            <div class="${textClasses}">
-              <span class="selection-preview block">${escapeHtml(previewText)}</span>
-              ${hasMore ? `<span class="selection-full hidden block">${escapeHtml(fullText)}</span>` : ''}
-              ${fade}
-            </div>
-            ${noteText ? `<div class="mt-3 text-xs italic text-slate-500">${escapeHtml(noteText)}</div>` : ''}
-            <div class="mt-3 flex items-center justify-between">
-              <button type="button"
-                      class="text-xs font-medium text-red-600 transition hover:text-red-700"
-                      onclick="removeSelection(${sel.id})">Delete</button>
-              ${toggleBtn}
-            </div>
+        <div class="selection-item px-5 py-3 text-sm text-slate-700" data-selection-id="${sel.id}">
+          <div class="selection-text-wrapper relative">
+            <div class="${textClasses}">${hasMore ? `<span class="selection-preview">${escapeHtml(previewText)}</span><span class="selection-full hidden">${escapeHtml(fullText)}</span>` : escapeHtml(fullText)}</div>${fade}
+          </div>${noteText ? `<div class="mt-1.5 text-xs italic text-slate-500">${escapeHtml(noteText)}</div>` : ''}
+          <div class="mt-1.5 flex items-center ${toggleBtn ? 'justify-between' : 'justify-start'}">
+            <button type="button"
+                    class="text-xs font-medium text-red-600 transition hover:text-red-700"
+                    onclick="removeSelection(${sel.id})">Delete</button>
+            ${toggleBtn}
           </div>
         </div>
       `;
