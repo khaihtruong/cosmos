@@ -172,7 +172,7 @@
   <div id="selectionsOverlay" class="fixed inset-0 z-30 hidden bg-black/20"></div>
 
   <aside id="selectionsSidebar"
-         class="fixed inset-y-0 right-0 z-40 w-full max-w-md translate-x-full transform border-l border-slate-200 bg-white shadow-xl transition-transform duration-200 ease-out">
+         class="fixed inset-y-0 right-0 z-40 flex h-full w-full max-w-md translate-x-full transform flex-col border-l border-slate-200 bg-white shadow-xl transition-transform duration-200 ease-out">
     <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
       <h3 class="text-base font-semibold text-slate-800">Saved Selections</h3>
       <button type="button"
@@ -184,21 +184,10 @@
         </svg>
       </button>
     </div>
-    <div id="selectionsContent" class="divide-y divide-slate-100">
+    <div id="selectionsContent" class="flex-1 overflow-y-auto divide-y divide-slate-100">
       <!-- Selections injected here -->
     </div>
   </aside>
-
-  <!-- Floating button -->
-  <button type="button"
-          onclick="toggleSelections()"
-          class="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
-    <span class="sr-only">Toggle saved selections</span>
-    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-      <path d="M5 5h9l5 5v9a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/>
-      <path d="M14 5v4h4"/>
-    </svg>
-  </button>
 
   <script>
     // Mobile sidebar toggle
@@ -257,6 +246,73 @@
       const pre = start > 0 ? '…' : '';
       const suf = end < t.length ? '…' : '';
       return pre + highlight(t.slice(start, end), query) + suf;
+    }
+
+    const SELECTION_PREVIEW_LIMIT = 200;
+
+    function buildSelectionPreview(text = '') {
+      const content = text || '';
+      if (content.length <= SELECTION_PREVIEW_LIMIT) return content;
+      const slice = content.slice(0, SELECTION_PREVIEW_LIMIT);
+      const lastSpace = slice.lastIndexOf(' ');
+      const trimmed = lastSpace > 40 ? slice.slice(0, lastSpace) : slice;
+      return `${trimmed.trimEnd()}…`;
+    }
+
+    function buildSelectionMarkup(sel) {
+      const fullText = sel.text || '';
+      const previewText = buildSelectionPreview(fullText);
+      const hasMore = fullText.length > SELECTION_PREVIEW_LIMIT;
+      const noteText = sel.note || '';
+
+      const fade = hasMore ? `<div class="selection-fade pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white via-white/70 to-transparent"></div>` : '';
+      const textClasses = 'selection-text relative whitespace-pre-wrap text-slate-800';
+      const toggleBtn = hasMore ? `<button type="button"
+              data-action="toggle-full"
+              class="selection-toggle text-xs font-medium text-indigo-600 transition hover:text-indigo-700"
+              onclick="toggleSelection(${sel.id})">See more</button>` : '<span class="text-xs text-slate-400">&nbsp;</span>';
+
+      return `
+        <div class="selection-item px-5 py-4 text-sm text-slate-700" data-selection-id="${sel.id}">
+          <div class="min-w-0">
+            <div class="${textClasses}">
+              <span class="selection-preview block">${escapeHtml(previewText)}</span>
+              ${hasMore ? `<span class="selection-full hidden block">${escapeHtml(fullText)}</span>` : ''}
+              ${fade}
+            </div>
+            ${noteText ? `<div class="mt-3 text-xs italic text-slate-500">${escapeHtml(noteText)}</div>` : ''}
+            <div class="mt-3 flex items-center justify-between">
+              <button type="button"
+                      class="text-xs font-medium text-red-600 transition hover:text-red-700"
+                      onclick="removeSelection(${sel.id})">Delete</button>
+              ${toggleBtn}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleSelection(id) {
+      const item = document.querySelector(`[data-selection-id="${id}"]`);
+      if (!item) return;
+      const preview = item.querySelector('.selection-preview');
+      const full = item.querySelector('.selection-full');
+      const button = item.querySelector('[data-action="toggle-full"]');
+      const fade = item.querySelector('.selection-fade');
+      if (!preview || !button) return;
+
+      const showingFull = full ? !full.classList.contains('hidden') : false;
+      if (showingFull) {
+        if (full) full.classList.add('hidden');
+        preview.classList.remove('hidden');
+        button.textContent = 'See more';
+        if (fade) fade.classList.remove('hidden');
+      } else {
+        if (full) full.classList.remove('hidden');
+        preview.classList.add('hidden');
+        button.textContent = 'See less';
+        if (fade) fade.classList.add('hidden');
+      }
     }
 
     let allConversations = [];
@@ -521,21 +577,29 @@
     async function loadSelections() {
       try {
         const response = await fetch('/api/selections');
-        const selections = await response.json();
+        if (!response.ok) return;
 
+        const selections = await response.json();
         const content = document.getElementById('selectionsContent');
+
         if (!selections.length) {
           content.innerHTML = '<div class="px-5 py-6 text-sm text-slate-500">No saved selections yet.</div>';
-        } else {
-          content.innerHTML = selections.map(sel => `
-            <div class="px-5 py-4 text-sm text-slate-700">
-              <div class="mb-2 whitespace-pre-wrap text-slate-800">${escapeHtml(sel.text)}</div>
-              ${sel.note ? `<div class="text-xs italic text-slate-500">${escapeHtml(sel.note)}</div>` : ''}
-            </div>
-          `).join('');
+          return;
         }
+
+        content.innerHTML = selections.map(sel => buildSelectionMarkup(sel)).join('');
       } catch (error) {
         console.error('Error loading selections:', error);
+      }
+    }
+
+    async function removeSelection(id) {
+      try {
+        const response = await fetch(`/api/selections/${id}`, { method: 'DELETE' });
+        if (!response.ok) return;
+        loadSelections();
+      } catch (error) {
+        console.error('Error deleting selection:', error);
       }
     }
 

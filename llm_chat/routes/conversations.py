@@ -329,13 +329,32 @@ def save_selection():
 @login_required
 def get_selections():
     selections = current_user.saved_selections.order_by(SavedSelection.created_at.desc()).limit(50).all()
+    conversation_titles = {}
+    if selections:
+        conv_ids = {s.conversation_id for s in selections}
+        conversations = Conversation.query.filter(Conversation.id.in_(conv_ids)).all()
+        for conv in conversations:
+            if conv:
+                conversation_titles[conv.id] = (conv.title or f"Conversation {conv.id}").strip() or f"Conversation {conv.id}"
+
     return jsonify([{
         'id': s.id,
         'text': s.selection_text,
-        'note': s.note,
+        'note': s.note or conversation_titles.get(s.conversation_id) or f"Conversation {s.conversation_id}",
         'conversation_id': s.conversation_id,
         'created_at': s.created_at
     } for s in selections])
+
+@conv_bp.route("/api/selections/<int:selection_id>", methods=["DELETE"])
+@login_required
+def delete_selection(selection_id):
+    selection = SavedSelection.query.get_or_404(selection_id)
+    if selection.user_id != current_user.id:
+        abort(403)
+
+    db.session.delete(selection)
+    db.session.commit()
+    return jsonify({'status': 'deleted', 'id': selection_id})
 
 # -------- Shared APIs: models & system prompts
 
