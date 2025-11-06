@@ -5,6 +5,7 @@ import nltk
 #nltk.download('stopwords')
 import numpy as np
 import pandas as pd
+from collections import Counter
 
 
 from nltk.corpus import stopwords
@@ -27,12 +28,12 @@ def main():
 
     print(co_occurrences) 
 
-    # Create a table of the results, substituting any missing data with N/A
+    # Create a table of the results, substituting any missing data with 0
     df = pd.DataFrame(co_occurrences).fillna(value=0)
 
     print(df)
 
-    create_graph(co_occurrences, df)
+    create_graph(co_occurrences, df, tokenised_sentences)
     
 
 
@@ -44,7 +45,7 @@ def clean_text(text):
 
 
 def tokenise_sentences(cleaned_text):
-    # Split up sentences (this will have to be refined as at the moment only taking into account full stop). I will be using regular expressions. The issue is that sentences like "I love tennis too, but my love for football is stonger" count the two occurrences of love both for football and for tennis, while it should only be one for tennis and one for football.
+    # Split up sentences at the full stop
     sentences = cleaned_text.lower().split(".")
 
     tokenised_sentences = []
@@ -80,20 +81,33 @@ def create_cooccurrence_matrix(tokenised_sentences):
     return co_occurrences
 
 
-def create_graph(dictionary, df):
+def create_graph(dictionary, df, tokenised_sentences):
 
-    node_strength = df.sum(axis=1)
-    #node_sizes = [node_strength[word] for word in dictionary]
+#Create the graph - the more the words cooccur, the closer they appear in the graph    
 
     G = nx.Graph()
     for key in dictionary:
         for cooccurrence in dictionary[key]:
             proximity = dictionary[key][cooccurrence]**2
-            G.add_edge(key, cooccurrence, weight=proximity) #node_size=node_sizes[0] ** 10)
-
+            G.add_edge(key, cooccurrence, weight=proximity) 
+    
+    all_words = [word for sentence in tokenised_sentences for word in sentence]
+    word_freq = Counter(all_words)
     
 
-    nx.draw_networkx(G)
+    #The greater the frequency of the words in the text, the larger their visual representation in the graph
+    node_sizes = [word_freq[node] * 1500 for node in G.nodes]
+
+    pos = nx.spring_layout(G, weight="weight")
+    
+    nx.draw(
+        G, pos, 
+        with_labels=True, 
+        node_size=node_sizes, 
+        node_color="skyblue", 
+        edge_color="gray", 
+        font_size=12
+        )
 
     plt.show()
 
