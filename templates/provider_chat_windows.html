@@ -213,6 +213,10 @@
               <input id="window_config_nlp_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
               <span><strong>NLP Analysis</strong> — Sentiment analysis and communication patterns</span>
             </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="window_config_cooccurrence_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Co-occurrence Analysis</strong> — Word relationship network showing conversation themes</span>
+            </label>
           </div>
         </div>
 
@@ -255,6 +259,10 @@
             <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
               <input id="config_nlp_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
               <span><strong>NLP Analysis</strong> — Sentiment analysis and communication patterns</span>
+            </label>
+            <label class="flex gap-3 rounded-lg border-2 border-transparent bg-slate-50 p-3 hover:border-indigo-300">
+              <input id="config_cooccurrence_analysis" type="checkbox" checked class="mt-1 h-5 w-5">
+              <span><strong>Co-occurrence Analysis</strong> — Word relationship network showing conversation themes</span>
             </label>
           </div>
         </div>
@@ -459,6 +467,7 @@
       document.getElementById('window_config_saved_messages').checked = true;
       document.getElementById('window_config_descriptive_stats').checked = true;
       document.getElementById('window_config_nlp_analysis').checked = true;
+      document.getElementById('window_config_cooccurrence_analysis').checked = true;
 
       addTemplateEditor();
       document.getElementById('windowModal').classList.remove('hidden');
@@ -496,6 +505,7 @@
         document.getElementById('window_config_saved_messages').checked = cfg.saved_messages !== false;
         document.getElementById('window_config_descriptive_stats').checked = cfg.descriptive_stats !== false;
         document.getElementById('window_config_nlp_analysis').checked = cfg.nlp_analysis !== false;
+        document.getElementById('window_config_cooccurrence_analysis').checked = cfg.cooccurrence_analysis !== false;
 
         const editor = document.getElementById('templatesEditor');
         editor.innerHTML = '';
@@ -581,7 +591,8 @@
         ai_summary: document.getElementById('window_config_ai_summary').checked,
         saved_messages: document.getElementById('window_config_saved_messages').checked,
         descriptive_stats: document.getElementById('window_config_descriptive_stats').checked,
-        nlp_analysis: document.getElementById('window_config_nlp_analysis').checked
+        nlp_analysis: document.getElementById('window_config_nlp_analysis').checked,
+        cooccurrence_analysis: document.getElementById('window_config_cooccurrence_analysis').checked
       };
 
       const payload = {
@@ -653,6 +664,7 @@
           document.getElementById('config_saved_messages').checked = cfg.saved_messages !== false;
           document.getElementById('config_descriptive_stats').checked = cfg.descriptive_stats !== false;
           document.getElementById('config_nlp_analysis').checked = cfg.nlp_analysis !== false;
+          document.getElementById('config_cooccurrence_analysis').checked = cfg.cooccurrence_analysis !== false;
         }
       } catch (e) { console.error('Error loading report config:', e); }
 
@@ -674,7 +686,8 @@
         ai_summary: document.getElementById('config_ai_summary').checked,
         saved_messages: document.getElementById('config_saved_messages').checked,
         descriptive_stats: document.getElementById('config_descriptive_stats').checked,
-        nlp_analysis: document.getElementById('config_nlp_analysis').checked
+        nlp_analysis: document.getElementById('config_nlp_analysis').checked,
+        cooccurrence_analysis: document.getElementById('config_cooccurrence_analysis').checked
       };
 
       try {

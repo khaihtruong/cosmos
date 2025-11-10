@@ -260,4 +260,108 @@ def get_base_css() -> str:
         color: #003d7a;
         margin-bottom: 1rem;
     }
+
+    /* Co-occurrence Analysis Styles */
+    .unified-report .cooccurrence-content {
+        margin-top: 1rem;
+    }
+
+    .unified-report .cooccurrence-graph {
+        background: #ffffff;
+        border: 2px solid #e6f3ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .unified-report .network-graph-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .unified-report .graph-caption {
+        font-size: 0.9rem;
+        color: #666;
+        font-style: italic;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .unified-report .cooccurrence-stats {
+        margin-bottom: 1.5rem;
+    }
+
+    .unified-report .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .unified-report .stat-item {
+        background: linear-gradient(135deg, #0066cc 0%, #4a90e2 100%);
+        color: #ffffff;
+        padding: 1.25rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .unified-report .top-words-section {
+        background: #f0f8ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid #0066cc;
+    }
+
+    .unified-report .top-words-section h4 {
+        margin: 0 0 1rem 0;
+        color: #003d7a;
+        font-size: 1.1rem;
+    }
+
+    .unified-report .top-words-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .unified-report .word-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ffffff;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .unified-report .word-text {
+        font-weight: 600;
+        color: #003d7a;
+        font-size: 1rem;
+    }
+
+    .unified-report .word-count {
+        background: #0066cc;
+        color: #ffffff;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .unified-report .error-message {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .unified-report .error-message p {
+        color: #856404;
+        margin: 0;
+    }
     """
