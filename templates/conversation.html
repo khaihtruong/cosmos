@@ -34,17 +34,7 @@
             align-items: center;
             gap: 1rem;
         }
-        
-        .back-btn {
-            padding: 0.5rem 1rem;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            color: #333;
-        }
-        
+
         .conversation-info {
             display: flex;
             align-items: center;
@@ -426,7 +416,6 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <button class="back-btn" onclick="goBack()">← Back</button>
             <h2 id="conversationTitle">Loading...</h2>
         </div>
         <div class="conversation-info">
@@ -1080,10 +1069,6 @@
             // Update immediately and then every second
             updateTimer();
             countdownInterval = setInterval(updateTimer, 1000);
-        }
-
-        function goBack() {
-            window.location.href = '/dashboard';
         }
 
         async function viewWindowReport() {
