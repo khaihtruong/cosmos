@@ -151,13 +151,13 @@
           </div>
         </section>
 
-        <section id="existingConversations"
-                 class="hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-          <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900">Previous Conversations</h3>
+        <section id="existingConversations" class="hidden mt-8">
+          <div class="mb-3">
+            <h4 class="text-base font-semibold text-slate-700">Previous Conversations</h4>
+            <p class="text-xs text-slate-500 mt-0.5">These conversations are from past windows that have ended.</p>
           </div>
-          <div id="conversationsList" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <!-- Existing conversations injected here -->
+          <div id="conversationsList" class="space-y-6">
+            <!-- Past windows injected here -->
           </div>
         </section>
       </main>
@@ -473,55 +473,112 @@
 
     async function loadExistingConversations() {
       try {
-        const response = await fetch('/api/conversations');
+        const response = await fetch('/api/windows');
         if (!response.ok) {
           if (response.status === 401) {
             window.location.href = '/login';
             return;
           }
-          throw new Error('Failed to load conversations');
+          throw new Error('Failed to load windows');
         }
 
-        conversations = await response.json();
+        const allWindows = await response.json();
 
-        const windowConvIds = currentWindows.flatMap(w =>
-          (w.templates || []).filter(t => t.conversation_id).map(t => t.conversation_id)
-        );
-
-        const oldConversations = (conversations || []).filter(c =>
-          !windowConvIds.includes(c.id) &&
-          !c.is_upcoming &&
-          c.id !== null  // Exclude placeholders
+        // Filter to only past windows (not current, not upcoming, and not in currentWindows)
+        const currentWindowIds = currentWindows.map(w => w.id);
+        const pastWindows = allWindows.filter(w =>
+          !currentWindowIds.includes(w.id) &&
+          !w.is_current &&
+          !w.is_upcoming
         );
 
         const existingSection = document.getElementById('existingConversations');
         const list = document.getElementById('conversationsList');
 
-        if (!oldConversations.length) {
+        if (!pastWindows.length) {
           existingSection.classList.add('hidden');
           list.innerHTML = '';
           return;
         }
 
         existingSection.classList.remove('hidden');
-        list.innerHTML = oldConversations.map(conv => `
-          <article class="flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow"
-                   onclick="window.location.href='/conversation/${conv.id}'">
-            <div class="flex items-center justify-between gap-3">
-              <h4 class="text-sm font-semibold text-slate-900">${escapeHtml(conv.title || 'Untitled Conversation')}</h4>
-              <span class="text-xs text-slate-500">${escapeHtml(formatDate(conv.updated_at))}</span>
-            </div>
-            <div class="mt-3 inline-flex items-center gap-2">
-              <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
-                ${escapeHtml(conv.model || 'Model')}
-              </span>
-              <span class="text-xs text-slate-500">💬 ${conv.message_count || 0} messages</span>
-            </div>
-          </article>
-        `).join('');
+        list.innerHTML = pastWindows.map(window => renderPastWindowCard(window)).join('');
       } catch (error) {
-        console.error('Error loading conversations:', error);
+        console.error('Error loading past conversations:', error);
       }
+    }
+
+    function renderPastWindowCard(window) {
+      const dateRange = escapeHtml(formatDateRange(window.start_date, window.end_date));
+      const descriptionHtml = window.description
+        ? `<p class="mt-3 text-sm leading-6 text-slate-600">${formatMultiline(window.description)}</p>`
+        : '';
+
+      const templates = Array.isArray(window.templates) ? window.templates : [];
+
+      const templatesHtml = templates.length
+        ? templates.map(template => {
+            const hasConversation = Boolean(template.has_conversation);
+            const conversationId = template.conversation_id != null ? template.conversation_id : 'null';
+
+            if (!hasConversation) {
+              // Template was never started
+              return `
+                <article class="flex h-full flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-5 text-left opacity-60">
+                  <div>
+                    <h4 class="text-base font-semibold text-slate-700">${escapeHtml(template.title || 'Untitled Session')}</h4>
+                    ${template.purpose ? `<p class="mt-2 text-sm leading-6 text-slate-500">${formatMultiline(template.purpose)}</p>` : ''}
+                  </div>
+                  <div class="mt-4 flex items-center gap-3">
+                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                      ${escapeHtml(template.model || 'Model')}
+                    </span>
+                    <span class="text-xs text-slate-500">Not started</span>
+                  </div>
+                </article>
+              `;
+            }
+
+            // Template has a conversation - make it clickable
+            return `
+              <article class="flex h-full cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:shadow"
+                       onclick="window.location.href='/conversation/${conversationId}'">
+                <div>
+                  <h4 class="text-base font-semibold text-slate-900">${escapeHtml(template.title || 'Untitled Session')}</h4>
+                  ${template.purpose ? `<p class="mt-2 text-sm leading-6 text-slate-600">${formatMultiline(template.purpose)}</p>` : ''}
+                </div>
+                <div class="mt-4 flex items-center gap-3">
+                  <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                    ${escapeHtml(template.model || 'Model')}
+                  </span>
+                  <span class="text-xs text-slate-500">View conversation</span>
+                </div>
+              </article>
+            `;
+          }).join('')
+        : `<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+             No chat templates in this window.
+           </div>`;
+
+      return `
+        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 class="text-xl font-semibold text-slate-900">${escapeHtml(window.title || 'Chat Window')}</h3>
+              ${descriptionHtml}
+            </div>
+            <div class="flex flex-col items-start gap-2 text-sm text-slate-500 sm:items-end">
+              <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700">
+                Ended
+              </span>
+              <span>📅 ${dateRange}</span>
+            </div>
+          </div>
+          <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            ${templatesHtml}
+          </div>
+        </section>
+      `;
     }
 
     function formatDateRange(startTs, endTs) {

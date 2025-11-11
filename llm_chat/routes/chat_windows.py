@@ -33,6 +33,18 @@ def get_chat_windows():
     for window in windows:
         window_data = window.to_dict()
         window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(is_active=True).order_by(ChatTemplate.order_index).all()]
+
+        # For patients, check if conversations exist for each template
+        if current_user.is_patient():
+            for template in window_data['templates']:
+                existing_conv = Conversation.query.filter_by(
+                    user_id=current_user.id,
+                    window_id=window.id,
+                    template_id=template['id']
+                ).first()
+                template['has_conversation'] = existing_conv is not None
+                template['conversation_id'] = existing_conv.id if existing_conv else None
+
         result.append(window_data)
 
     return jsonify(result)
