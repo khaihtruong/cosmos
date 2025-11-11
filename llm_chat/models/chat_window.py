@@ -59,6 +59,7 @@ class ChatWindow(db.Model):
             'end_date': self.end_date,
             'is_active': self.is_active,
             'is_current': self.is_current(),
+            'is_upcoming': self.is_upcoming(),
             'created_at': self.created_at,
             'updated_at': self.updated_at
         }

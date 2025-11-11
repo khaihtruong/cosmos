@@ -169,12 +169,14 @@ def get_conversations():
 
         # Determine if conversation is active (can still send messages)
         is_active = True
+        is_upcoming = False
         window_end_date = None
 
         if c.window_id:
             window = ChatWindow.query.get(c.window_id)
             if window:
                 window_end_date = window.end_date
+                is_upcoming = window.is_upcoming()
                 # Conversation is inactive if window has ended or is not active
                 if now > window.end_date or not window.is_active:
                     is_active = False
@@ -193,6 +195,7 @@ def get_conversations():
             'message_count': len(msgs),
             'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
             'is_active': is_active,
+            'is_upcoming': is_upcoming,
             'window_end_date': window_end_date,
             'template_id': c.template_id
         })

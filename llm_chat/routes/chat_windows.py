@@ -76,7 +76,7 @@ def get_chat_window(window_id):
 @window_bp.route("/current", methods=["GET"])
 @login_required
 def get_current_windows():
-    """Get currently active chat windows for the patient"""
+    """Get active chat windows for the patient (current and upcoming)"""
     if not current_user.is_patient():
         abort(403)
 
@@ -85,12 +85,9 @@ def get_current_windows():
         is_active=True
     ).all()
 
-    # Filter to only currently valid windows based on date
-    current_windows = [w for w in windows if w.is_current()]
-
     # Include templates for each window
     result = []
-    for window in current_windows:
+    for window in windows:
         window_data = window.to_dict()
         window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(is_active=True).order_by(ChatTemplate.order_index).all()]
         # Check if conversations already exist for each template
