@@ -117,6 +117,7 @@ def get_conversation_data(conversation_id):
         },
         'window_end_date': window_end_date,
         'window_id': window_id,
+        'consent_provided': conversation.consent_provided,
         'messages': [m.to_dict() for m in messages]
     })
 
@@ -131,6 +132,16 @@ def update_conversation_title(conversation_id):
     conversation.updated_at = time.time()
     db.session.commit()
     return jsonify({'status': 'success', 'title': conversation.title})
+
+@conv_bp.route("/api/conversation/<int:conversation_id>/consent", methods=["POST"])
+@login_required
+def mark_consent_provided(conversation_id):
+    conversation = Conversation.query.get_or_404(conversation_id)
+    if conversation.user_id != current_user.id:
+        abort(403)
+    conversation.consent_provided = True
+    db.session.commit()
+    return jsonify({'status': 'success', 'consent_provided': True})
 
 '''
 @conv_bp.route("/api/conversations")

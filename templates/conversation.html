@@ -589,8 +589,8 @@
 
         // Safety modal management
         function checkSafetyAcknowledgment() {
-            const acknowledged = localStorage.getItem('safetyAcknowledged');
-            if (!acknowledged) {
+            // Check if consent has been provided for this specific conversation
+            if (conversationData && !conversationData.consent_provided) {
                 document.getElementById('safetyModal').style.display = 'block';
             }
         }
@@ -609,9 +609,30 @@
             }
         });
 
-        function acknowledgeSafety() {
-            localStorage.setItem('safetyAcknowledged', 'true');
-            document.getElementById('safetyModal').style.display = 'none';
+        async function acknowledgeSafety() {
+            try {
+                // Mark consent as provided for this conversation
+                const response = await fetch(`/api/conversation/${conversationId}/consent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save consent');
+                }
+
+                // Update local conversation data
+                if (conversationData) {
+                    conversationData.consent_provided = true;
+                }
+
+                document.getElementById('safetyModal').style.display = 'none';
+            } catch (error) {
+                console.error('Error saving consent:', error);
+                showError('Failed to save consent. Please try again.');
+            }
         }
 
         async function loadConversationData() {
@@ -652,8 +673,11 @@
                         </div>
                     </div>
                 `).join('');
-                
+
                 scrollToBottom();
+
+                // Check if safety acknowledgment is needed for this conversation
+                checkSafetyAcknowledgment();
             } catch (error) {
                 console.error('Error loading conversation:', error);
                 showError('Failed to load conversation data');
@@ -1133,7 +1157,6 @@
         }
 
         // Initialize
-        checkSafetyAcknowledgment();
         loadConversationData();
         loadSavedSelections();
 
