@@ -2,6 +2,14 @@
 
 LLM Chat is a chatbot leveraging industry-standard LLM models (OpenAI, Gemini, Anthropic) to converse and capture patient's behavior in between therapy sessions. This allows clinicians to have a good understanding of their patients.
 
+## TODO
+- [ ] User active chat should show both started and non-started chat
+- [ ] Add filtering/sorting order for rovider chat window / potentially rearrange order
+- [ ] CHeck if report generate per convo or per window
+- [ ] Add more informational for when creating new chat window
+- [ ] Adding model for report
+- [ ] Adding header, standardizing language across pages and chat creation - Matt
+- [ ] Navigation standardization, settings hiding - Khai
 ## Quick Start for Mac
 
 ### Prerequisites
