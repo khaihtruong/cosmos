@@ -147,13 +147,22 @@ def get_conversations():
 @conv_bp.route("/api/conversations")
 @login_required
 def get_conversations():
+    from ..models import ChatWindow, ChatTemplate
+
     conversations = current_user.conversations.order_by(Conversation.updated_at.desc()).all()
 
     payload = []
     now = time.time()
 
+    # Track which templates already have conversations
+    started_template_ids = set()
+
     for c in conversations:
         msgs = c.messages.order_by(Message.timestamp).all()  # because lazy='dynamic'
+
+        # Track templates that have been started
+        if c.template_id:
+            started_template_ids.add(c.template_id)
 
         # Determine if conversation is active (can still send messages)
         is_active = True
@@ -181,8 +190,47 @@ def get_conversations():
             'message_count': len(msgs),
             'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
             'is_active': is_active,
-            'window_end_date': window_end_date
+            'window_end_date': window_end_date,
+            'template_id': c.template_id
         })
+
+    # Add unstarted templates from active windows
+    windows = ChatWindow.query.filter_by(
+        patient_id=current_user.id,
+        is_active=True
+    ).all()
+
+    for window in windows:
+        # Only include templates from current windows (not ended)
+        if now > window.end_date:
+            continue
+
+        templates = ChatTemplate.query.filter_by(
+            window_id=window.id,
+            is_active=True
+        ).order_by(ChatTemplate.order_index).all()
+
+        for template in templates:
+            # Skip templates that already have conversations
+            if template.id in started_template_ids:
+                continue
+
+            # Add placeholder for unstarted template
+            payload.append({
+                'id': None,  # No conversation ID yet
+                'title': f"{template.title} (Not Started)",
+                'model': template.model.name if template.model else 'Unknown',
+                'created_at': window.created_at,
+                'updated_at': window.created_at,
+                'message_count': 0,
+                'messages': [],
+                'is_active': True,  # Template is in an active window
+                'window_end_date': window.end_date,
+                'template_id': template.id,
+                'is_placeholder': True,  # Flag to identify unstarted templates
+                'window_id': window.id
+            })
+
     return jsonify(payload)
 
 

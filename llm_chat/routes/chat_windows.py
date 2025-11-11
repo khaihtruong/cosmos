@@ -263,7 +263,7 @@ def start_conversation_from_template():
     ).first()
 
     if existing:
-        return jsonify({'id': existing.id, 'existing': True})
+        return jsonify({'conversation_id': existing.id, 'existing': True})
 
     # Create new conversation
     conversation = Conversation(
@@ -278,4 +278,4 @@ def start_conversation_from_template():
     db.session.add(conversation)
     db.session.commit()
 
-    return jsonify({'id': conversation.id, 'existing': False})
+    return jsonify({'conversation_id': conversation.id, 'existing': False})
