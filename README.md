@@ -9,7 +9,7 @@ LLM Chat is a chatbot leveraging industry-standard LLM models (OpenAI, Gemini, A
 - [ ] Add more informational for when creating new chat window
 - [ ] Adding model for report
 - [ ] Adding header, standardizing language across pages and chat creation - Matt
-- [ ] Navigation standardization, settings hiding - Khai
+- [ ] Navigation standardization, settings hiding, lock ability to recreate chat, showing inactive/past convo - Khai
 ## Quick Start for Mac
 
 ### Prerequisites
