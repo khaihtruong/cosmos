@@ -114,6 +114,8 @@ class HTMLRenderer(Renderer):
             return self._render_descriptive_stats(data)
         elif component_name == 'nlp_analysis':
             return self._render_nlp_analysis(data)
+        elif component_name == 'cooccurrence_analysis':
+            return self._render_cooccurrence_analysis(data)
         else:
             return f'<p>Unknown component: {component_name}</p>'
 
@@ -292,3 +294,84 @@ class HTMLRenderer(Renderer):
             return "Negative"
         else:
             return "Neutral"
+
+    def _render_cooccurrence_analysis(self, data: Dict[str, Any]) -> str:
+        """Render co-occurrence analysis component."""
+        html = f"""
+        <div class="report-component cooccurrence-analysis">
+            <div class="component-header">
+                <span class="component-icon">🔗</span>
+                <h3 class="component-title">Word Co-occurrence Network</h3>
+            </div>
+            <div class="cooccurrence-content">
+        """
+
+        if data.get('error'):
+            html += f"""
+                <div class="error-message">
+                    <p>Error generating co-occurrence analysis: {data['error']}</p>
+                </div>
+            """
+        elif data.get('total_unique_words', 0) == 0:
+            html += """
+                <p class="no-data">No word co-occurrence data available</p>
+            """
+        else:
+            # Show network graph if available
+            if data.get('has_visualization') and data.get('graph_image'):
+                html += f"""
+                <div class="cooccurrence-graph">
+                    <img src="data:image/png;base64,{data['graph_image']}"
+                         alt="Word Co-occurrence Network"
+                         class="network-graph-image" />
+                    <p class="graph-caption">
+                        Network showing relationships between frequently co-occurring words.
+                        Node size reflects word frequency; connections show co-occurrence strength.
+                    </p>
+                </div>
+                """
+
+            # Show statistics
+            html += f"""
+                <div class="cooccurrence-stats">
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-value">{data['total_unique_words']}</span>
+                            <span class="stat-label">Unique Words</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{data['total_sentences']}</span>
+                            <span class="stat-label">Sentences Analyzed</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{data.get('message_count', 0)}</span>
+                            <span class="stat-label">Messages</span>
+                        </div>
+                    </div>
+                </div>
+            """
+
+            # Show top words
+            if data.get('top_words'):
+                html += """
+                    <div class="top-words-section">
+                        <h4>Most Frequent Words</h4>
+                        <div class="top-words-list">
+                """
+                for word_data in data['top_words'][:10]:  # Show top 10
+                    html += f"""
+                        <div class="word-item">
+                            <span class="word-text">{word_data['word']}</span>
+                            <span class="word-count">{word_data['count']}</span>
+                        </div>
+                    """
+                html += """
+                        </div>
+                    </div>
+                """
+
+        html += """
+            </div>
+        </div>
+        """
+        return html

@@ -8,9 +8,11 @@ that can be used by any component.
 from .sentiment import SentimentAnalyzer
 from .voice_analysis import VoiceAnalyzer
 from .keyword_extraction import KeywordAnalyzer
+from .cooccurrence import CooccurrenceAnalyzer
 
 __all__ = [
     'SentimentAnalyzer',
     'VoiceAnalyzer',
     'KeywordAnalyzer',
+    'CooccurrenceAnalyzer',
 ]
