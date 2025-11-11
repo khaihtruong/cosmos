@@ -319,13 +319,25 @@
             width: 300px;
             background: white;
             border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-content {
+            flex: 1;
             padding: 1.5rem;
             overflow-y: auto;
         }
-        
-        .sidebar h3 {
+
+        .sidebar-content h3 {
             margin-bottom: 1rem;
             color: #333;
+        }
+
+        .crisis-section {
+            padding: 1rem 1.5rem;
+            border-top: 2px solid #f59e0b;
+            background: #fef9e7;
         }
         
         .saved-item {
@@ -465,22 +477,96 @@
                 {% if is_provider %}
                 <p style="color: #666; margin: 0;">🔒 Read-only view - Only the patient can send messages</p>
                 {% else %}
-                <p style="color: #666; margin: 0;">🔒 Read-only view - This conversation has ended</p>
+                <div style="color: #666; margin: 0;">
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">This conversation window has closed</p>
+                    <p style="font-size: 0.875rem; margin: 0;">You can review all your messages here anytime. To see a summary of this conversation, click "View Report" above.</p>
+                </div>
                 {% endif %}
             </div>
             {% endif %}
         </div>
         
         <div class="sidebar">
-            <h3>Saved Selections</h3>
-            <div id="savedSelections">
-                <!-- Saved selections will be loaded here -->
+            <div class="sidebar-content">
+                <h3>Your Saved Quotes</h3>
+                <p style="font-size: 0.75rem; color: #666; margin-top: 0.25rem; margin-bottom: 0.75rem;">Highlight meaningful text to save it for later reflection. Your saved selections are shared with your provider.</p>
+                <div id="savedSelections">
+                    <!-- Saved quotes will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Crisis Resources - Always at bottom -->
+            <div class="crisis-section">
+                <h4 style="font-size: 0.875rem; font-weight: 600; color: #92400e; margin: 0 0 0.5rem 0;">⚠️ Need Immediate Help?</h4>
+                <div style="font-size: 0.75rem; color: #78350f; line-height: 1.5;">
+                    <p style="margin: 0 0 0.5rem 0;"><strong>US:</strong></p>
+                    <ul style="margin: 0 0 0.75rem 0; padding-left: 1.25rem;">
+                        <li>Call <strong>988</strong> (Suicide & Crisis Lifeline)</li>
+                        <li>Call <strong>911</strong> for emergencies</li>
+                    </ul>
+                    <p style="margin: 0 0 0.5rem 0;"><strong>UK:</strong></p>
+                    <ul style="margin: 0; padding-left: 1.25rem;">
+                        <li>Call <strong>999</strong> for emergencies</li>
+                        <li>Call <strong>116 123</strong> (Samaritans)</li>
+                    </ul>
+                    <p style="margin: 0.75rem 0 0 0; font-style: italic;">This is for general discussion, not clinical treatment or crisis support.</p>
+                </div>
             </div>
         </div>
     </div>
     
     <div class="selection-popup" id="selectionPopup">
         <button onclick="saveSelection()">💾 Save Selection</button>
+    </div>
+
+    <!-- Safety Disclaimer Modal -->
+    <div id="safetyModal" style="display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.5); padding: 1rem; backdrop-filter: blur(4px);">
+        <div style="margin: 2rem auto; max-width: 40rem; background: white; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
+            <div style="background: #4f46e5; color: white; padding: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0;">Important Safety Information</h2>
+            </div>
+            <div style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+                <p style="margin-bottom: 1rem; line-height: 1.6;">
+                    This conversation partner is designed for general discussion and support between your regular sessions.
+                    It is <strong>NOT</strong> a substitute for emergency services or crisis intervention.
+                </p>
+
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin: 1.5rem 0; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #92400e;">⚠️ Crisis Support</h3>
+                    <p style="margin: 0 0 0.5rem 0; color: #78350f;">If you are experiencing a mental health crisis, please:</p>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #78350f;">
+                        <li>Call <strong>988</strong> (Suicide & Crisis Lifeline)</li>
+                        <li>Call <strong>911</strong> for immediate emergency assistance</li>
+                        <li>Contact your provider directly</li>
+                    </ul>
+                </div>
+
+                <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 1rem; margin: 1.5rem 0; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #7f1d1d;">⚠️ Required Reporting</h3>
+                    <p style="margin: 0; color: #7f1d1d;">
+                        For your safety, if you express active suicidal or homicidal thoughts with specific means or plans,
+                        we are required to notify your provider and may contact local authorities.
+                    </p>
+                </div>
+
+                <p style="margin: 1.5rem 0 0 0; color: #666; line-height: 1.6;">
+                    This conversation partner is here to support you between sessions, but it cannot provide clinical
+                    treatment or emergency intervention.
+                </p>
+
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                    <label style="display: flex; align-items: start; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="safetyAcknowledge" style="margin-top: 0.25rem; margin-right: 0.5rem; width: 1rem; height: 1rem; cursor: pointer;">
+                        <span style="color: #374151; font-size: 0.875rem;">I understand this information and agree to use this conversation partner for general discussion only, not for clinical treatment or emergencies.</span>
+                    </label>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.5rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end;">
+                <button id="safetyConfirmBtn" disabled onclick="acknowledgeSafety()" style="padding: 0.75rem 1.5rem; background: #4f46e5; color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: not-allowed; opacity: 0.5;">
+                    Continue to Conversation
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Report modal -->
@@ -511,7 +597,34 @@
         let conversationData = null;
         let countdownInterval = null;
         let windowId = null;
-        
+
+        // Safety modal management
+        function checkSafetyAcknowledgment() {
+            const acknowledged = localStorage.getItem('safetyAcknowledged');
+            if (!acknowledged) {
+                document.getElementById('safetyModal').style.display = 'block';
+            }
+        }
+
+        // Enable/disable continue button based on checkbox
+        document.getElementById('safetyAcknowledge').addEventListener('change', function() {
+            const btn = document.getElementById('safetyConfirmBtn');
+            if (this.checked) {
+                btn.disabled = false;
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+            } else {
+                btn.disabled = true;
+                btn.style.cursor = 'not-allowed';
+                btn.style.opacity = '0.5';
+            }
+        });
+
+        function acknowledgeSafety() {
+            localStorage.setItem('safetyAcknowledged', 'true');
+            document.getElementById('safetyModal').style.display = 'none';
+        }
+
         async function loadConversationData() {
             try {
                 const response = await fetch(`/api/conversation/${conversationId}`);
@@ -1033,8 +1146,9 @@
                 }
             }
         }
-        
+
         // Initialize
+        checkSafetyAcknowledgment();
         loadConversationData();
         loadSavedSelections();
 
