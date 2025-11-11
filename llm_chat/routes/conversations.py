@@ -201,8 +201,16 @@ def get_conversations():
     ).all()
 
     for window in windows:
-        # Only include templates from current windows (not ended)
+        # Only include templates from windows that haven't ended yet
         if now > window.end_date:
+            continue
+
+        # Check if window is current (started) or upcoming (future)
+        is_upcoming = window.is_upcoming()
+        is_current = window.is_current()
+
+        # Skip if window is neither current nor upcoming (should not happen given the check above)
+        if not is_current and not is_upcoming:
             continue
 
         templates = ChatTemplate.query.filter_by(
@@ -216,18 +224,21 @@ def get_conversations():
                 continue
 
             # Add placeholder for unstarted template
+            title_suffix = " (Not Started)" if is_current else " (Scheduled)"
             payload.append({
                 'id': None,  # No conversation ID yet
-                'title': f"{template.title} (Not Started)",
+                'title': f"{template.title}{title_suffix}",
                 'model': template.model.name if template.model else 'Unknown',
                 'created_at': window.created_at,
                 'updated_at': window.created_at,
                 'message_count': 0,
                 'messages': [],
-                'is_active': True,  # Template is in an active window
+                'is_active': is_current,  # Only current windows are considered "active"
                 'window_end_date': window.end_date,
+                'window_start_date': window.start_date,
                 'template_id': template.id,
                 'is_placeholder': True,  # Flag to identify unstarted templates
+                'is_upcoming': is_upcoming,  # Flag to identify future windows
                 'window_id': window.id
             })
 
