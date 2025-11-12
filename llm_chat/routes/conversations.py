@@ -163,8 +163,8 @@ def get_conversations():
             window = ChatWindow.query.get(c.window_id)
             if window:
                 window_end_date = window.end_date
-                # Conversation is inactive if window has ended or is not active
-                if now > window.end_date or not window.is_active:
+                # Conversations only become inactive when their window is explicitly deactivated
+                if not window.is_active:
                     is_active = False
 
         # Skip empty conversations only if they're inactive (past)
@@ -431,5 +431,4 @@ def get_system_prompts():
         result.append({'id': p.id, 'name': p.name, 'content': content})
 
     return jsonify(result)
-
 
