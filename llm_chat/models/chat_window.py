@@ -29,7 +29,13 @@ class ChatWindow(db.Model):
     def is_current(self):
         """Check if this window is currently active based on date"""
         now = time.time()
+        # Window is current if it's active, has started, and hasn't ended yet
         return self.is_active and self.start_date <= now <= self.end_date
+
+    def is_upcoming(self):
+        """Check if this window is scheduled for the future"""
+        now = time.time()
+        return self.is_active and now < self.start_date
 
     def get_report_config(self):
         """Get report configuration as dict"""
@@ -53,6 +59,7 @@ class ChatWindow(db.Model):
             'end_date': self.end_date,
             'is_active': self.is_active,
             'is_current': self.is_current(),
+            'is_upcoming': self.is_upcoming(),
             'created_at': self.created_at,
             'updated_at': self.updated_at
         }

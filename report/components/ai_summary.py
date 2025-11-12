@@ -1,25 +1,24 @@
 """
 AI Summary Component
 
-Generates AI-powered summaries of conversations using Google's Gemini models.
+Generates AI-powered summaries of conversations using Llama models.
 Extracts key themes and clinical progress notes from chat transcripts.
 """
 
-import os
 from datetime import datetime
-from typing import Dict, Any
-import google.generativeai as genai
+from typing import Dict, Any, Optional
 
 from report.base import ReportComponent
 from llm_chat.models import Model
+from llm_chat.services.llm_interface import LLMInterface
 
 
 class AISummaryComponent(ReportComponent):
-    """AI-powered conversation summary component using Gemini."""
+    """AI-powered conversation summary component using Llama models."""
 
-    def generate(self) -> Dict[str, Any]:
+    def generate(self) -> Optional[Dict[str, Any]]:
         """
-        Generate AI summary using Gemini.
+        Generate AI summary using the smallest available Llama model.
 
         Returns:
             Dict containing:
@@ -28,6 +27,7 @@ class AISummaryComponent(ReportComponent):
                 - progress_notes: Clinical notes
                 - generated_with: Model name used
                 - error: Error message if generation failed
+            Or None if no Llama models are available.
         """
         if not self.messages:
             return {
@@ -38,12 +38,19 @@ class AISummaryComponent(ReportComponent):
             }
 
         try:
-            model = self._select_gemini_model()
+            model = self._select_llama_model()
+            if model is None:
+                # No Llama models available, skip AI summary
+                return None
+
             conversation_text = self._prepare_conversation_text()
             prompt = self._build_prompt(conversation_text)
 
-            response = model.generate_content(prompt)
-            return self._parse_ai_response(response.text, model.name)
+            # Use LLMInterface to call the model
+            messages = [{"role": "user", "content": prompt}]
+            response_text, _ = LLMInterface.call_llm(model, messages)
+
+            return self._parse_ai_response(response_text, model.name)
 
         except Exception as e:
             return {
@@ -53,34 +60,55 @@ class AISummaryComponent(ReportComponent):
                 "error": str(e)
             }
 
-    def _select_gemini_model(self):
-        """Select the best available Gemini model."""
-        google_key = os.getenv('GOOGLE_API_KEY')
-        if not google_key or google_key.strip() == '' or google_key == 'your_google_api_key_here':
-            raise ValueError("Google API key not configured")
+    def _select_llama_model(self) -> Optional[Model]:
+        """
+        Select the smallest available Llama model.
 
-        genai.configure(api_key=google_key)
-
-        # Check available models in database
+        Returns:
+            Model object if a Llama model is available, None otherwise.
+        """
+        # Query for available Llama models from local provider
         available_models = Model.query.filter(
-            Model.name.like('gemini%'),
+            Model.provider == 'local',
+            Model.name.ilike('%llama%'),
             Model.is_active == True
         ).all()
 
-        # Prioritize models
-        priority_order = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro']
+        if not available_models:
+            print("No Llama models available for AI summary generation")
+            return None
 
-        for model_name in priority_order:
-            model = next((m for m in available_models if m.name == model_name), None)
-            if model:
-                return genai.GenerativeModel(model_name)
+        # Check actual availability
+        available_models = [m for m in available_models if m.check_availability()]
 
-        # Fallback to any available Gemini model
-        if available_models:
-            model = available_models[0]
-            return genai.GenerativeModel(model.name)
+        if not available_models:
+            print("No Llama models currently available for AI summary generation")
+            return None
 
-        raise ValueError("No Gemini models available")
+        # Prioritize smaller models (ordered from smallest to largest)
+        # Common patterns: llama3.2, llama3.1, llama2, llama3
+        priority_patterns = [
+            'llama3.2:1b',      # Smallest
+            'llama3.2:3b',
+            'llama3.2',
+            'llama2:7b',
+            'llama3.1:8b',
+            'llama3:8b',
+            'llama2',
+            'llama3.1',
+            'llama3',
+        ]
+
+        # Try to find models matching priority patterns
+        for pattern in priority_patterns:
+            for model in available_models:
+                if pattern.lower() in model.name.lower():
+                    print(f"Selected Llama model for AI summary: {model.name}")
+                    return model
+
+        # Fallback to first available Llama model
+        print(f"Selected Llama model for AI summary: {available_models[0].name}")
+        return available_models[0]
 
     def _prepare_conversation_text(self) -> str:
         """Prepare conversation text for AI analysis."""

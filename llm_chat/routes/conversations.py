@@ -97,10 +97,12 @@ def get_conversation_data(conversation_id):
 
     # Get window info if conversation belongs to a window
     window_end_date = None
+    window_id = None
     if conversation.window_id:
         window = ChatWindow.query.get(conversation.window_id)
         if window:
             window_end_date = window.end_date
+            window_id = window.id
 
     return jsonify({
         'id': conversation.id,
@@ -114,6 +116,8 @@ def get_conversation_data(conversation_id):
             'name': SystemPrompt.query.get(conversation.system_prompt_id).name if conversation.system_prompt_id else None
         },
         'window_end_date': window_end_date,
+        'window_id': window_id,
+        'consent_provided': conversation.consent_provided,
         'messages': [m.to_dict() for m in messages]
     })
 
@@ -128,6 +132,16 @@ def update_conversation_title(conversation_id):
     conversation.updated_at = time.time()
     db.session.commit()
     return jsonify({'status': 'success', 'title': conversation.title})
+
+@conv_bp.route("/api/conversation/<int:conversation_id>/consent", methods=["POST"])
+@login_required
+def mark_consent_provided(conversation_id):
+    conversation = Conversation.query.get_or_404(conversation_id)
+    if conversation.user_id != current_user.id:
+        abort(403)
+    conversation.consent_provided = True
+    db.session.commit()
+    return jsonify({'status': 'success', 'consent_provided': True})
 
 '''
 @conv_bp.route("/api/conversations")
@@ -147,22 +161,33 @@ def get_conversations():
 @conv_bp.route("/api/conversations")
 @login_required
 def get_conversations():
+    from ..models import ChatWindow, ChatTemplate
+
     conversations = current_user.conversations.order_by(Conversation.updated_at.desc()).all()
 
     payload = []
     now = time.time()
 
+    # Track which templates already have conversations
+    started_template_ids = set()
+
     for c in conversations:
         msgs = c.messages.order_by(Message.timestamp).all()  # because lazy='dynamic'
 
+        # Track templates that have been started
+        if c.template_id:
+            started_template_ids.add(c.template_id)
+
         # Determine if conversation is active (can still send messages)
         is_active = True
+        is_upcoming = False
         window_end_date = None
 
         if c.window_id:
             window = ChatWindow.query.get(c.window_id)
             if window:
                 window_end_date = window.end_date
+                is_upcoming = window.is_upcoming()
                 # Conversation is inactive if window has ended or is not active
                 if now > window.end_date or not window.is_active:
                     is_active = False
@@ -181,8 +206,59 @@ def get_conversations():
             'message_count': len(msgs),
             'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
             'is_active': is_active,
-            'window_end_date': window_end_date
+            'is_upcoming': is_upcoming,
+            'window_end_date': window_end_date,
+            'template_id': c.template_id
         })
+
+    # Add unstarted templates from active windows
+    windows = ChatWindow.query.filter_by(
+        patient_id=current_user.id,
+        is_active=True
+    ).all()
+
+    for window in windows:
+        # Only include templates from windows that haven't ended yet
+        if now > window.end_date:
+            continue
+
+        # Check if window is current (started) or upcoming (future)
+        is_upcoming = window.is_upcoming()
+        is_current = window.is_current()
+
+        # Skip if window is neither current nor upcoming (should not happen given the check above)
+        if not is_current and not is_upcoming:
+            continue
+
+        templates = ChatTemplate.query.filter_by(
+            window_id=window.id,
+            is_active=True
+        ).order_by(ChatTemplate.order_index).all()
+
+        for template in templates:
+            # Skip templates that already have conversations
+            if template.id in started_template_ids:
+                continue
+
+            # Add placeholder for unstarted template
+            title_suffix = " (Not Started)" if is_current else " (Scheduled)"
+            payload.append({
+                'id': None,  # No conversation ID yet
+                'title': f"{template.title}{title_suffix}",
+                'model': template.model.name if template.model else 'Unknown',
+                'created_at': window.created_at,
+                'updated_at': window.created_at,
+                'message_count': 0,
+                'messages': [],
+                'is_active': is_current,  # Only current windows are considered "active"
+                'window_end_date': window.end_date,
+                'window_start_date': window.start_date,
+                'template_id': template.id,
+                'is_placeholder': True,  # Flag to identify unstarted templates
+                'is_upcoming': is_upcoming,  # Flag to identify future windows
+                'window_id': window.id
+            })
+
     return jsonify(payload)
 
 

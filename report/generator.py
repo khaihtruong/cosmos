@@ -73,8 +73,12 @@ class UnifiedReportGenerator:
             if self.config.get(component_name, False):
                 try:
                     component_data = component.generate()
-                    report_data['components'][component_name] = component_data
-                    self.components_data[component_name] = (component, component_data)
+                    # Skip component if it returns None (e.g., AI summary when no Llama models available)
+                    if component_data is not None:
+                        report_data['components'][component_name] = component_data
+                        self.components_data[component_name] = (component, component_data)
+                    else:
+                        print(f"Skipping {component_name}: component returned None")
                 except Exception as e:
                     print(f"Error generating {component_name}: {e}")
                     report_data['components'][component_name] = {'error': str(e)}

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>User Dashboard - LLM Chat</title>
+  <title>Dashboard</title>
+  <link rel="icon" type="image/png" href="/static/images/logo.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -45,16 +46,18 @@
             </li>
             <li>
               <a href="/chat-windows"
-                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100"
+                 title="View and manage all your conversation windows">
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                   <path d="M8 10h8M8 14h5"/><path d="M21 12a8.5 8.5 0 01-1.6 5l.6 3-3-1a8.5 8.5 0 11-2-14.5"/>
                 </svg>
-                <span>Chat Sessions</span>
+                <span>My Conversations</span>
               </a>
             </li>
             <li>
               <a href="/my-reports"
-                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100"
+                 title="Review reports from completed conversations">
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                   <path d="M5 4h14M5 8h14M5 12h7M5 16h7M5 20h14"/>
                 </svg>
@@ -64,21 +67,13 @@
             <li>
               <button type="button"
                       onclick="toggleSelections()"
-                      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-600 transition hover:bg-slate-100">
+                      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-600 transition hover:bg-slate-100"
+                      title="Quotes and insights you've saved from your conversations">
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                   <path d="M6 4h12a1 1 0 011 1v16l-7-3-7 3V5a1 1 0 011-1z"/>
                 </svg>
-                <span>Saved Selections</span>
+                <span>Saved Quotes</span>
               </button>
-            </li>
-            <li>
-              <a href="/settings"
-                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
-                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                  <path d="M10 6h4l1 2 2 1v4l-2 1-1 2h-4l-1-2-2-1V9l2-1 1-2z"/><circle cx="12" cy="12" r="2.5"/>
-                </svg>
-                <span>Settings</span>
-              </a>
             </li>
           </ul>
         </div>
@@ -114,14 +109,12 @@
       <!-- Content -->
       <main class="w-full p-6">
         <section class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-          <h2 class="mb-1 text-xl font-semibold">Welcome back</h2>
-          <p class="text-slate-600">Review recent chats, search your history, and revisit saved selections.</p>
+          <h2 class="mb-1 text-xl font-semibold">Welcome back, {{ current_user.username }}</h2>
+          <p class="text-slate-600">This is your space for conversations between sessions. Your provider has set up AI conversation partners to support your ongoing discussions. These conversations complement your regular sessions with your care team, but are not a sufficient substitute for your regular appointments.</p>
         </section>
 
         <section class="space-y-6">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h3 class="text-lg font-semibold text-slate-800">My Conversations</h3>
-
             <div id="searchContainer" class="relative w-full sm:w-80">
               <input
                 type="text"
@@ -136,32 +129,53 @@
             </div>
           </div>
 
-          <!-- Active Chats Section -->
+          <!-- Active Conversations Section -->
           <div id="activeSection">
-            <h4 class="mb-3 text-base font-semibold text-slate-700">Active Chats</h4>
+            <div class="mb-3">
+              <h4 class="text-base font-semibold text-slate-700">Available Now</h4>
+              <p class="text-xs text-slate-500 mt-0.5">These conversations are ready for you. Click any card to start or continue a discussion.</p>
+            </div>
             <div id="activeGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Active chat cards injected here -->
+              <!-- Active conversation cards injected here -->
             </div>
             <div id="activeEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
-              <p class="text-sm">No active conversations</p>
+              <p class="text-sm">No conversations are available right now. Your provider will set up new conversation windows as part of your care plan. Check back soon, or explore your past conversations and summaries.</p>
             </div>
           </div>
 
-          <!-- Past Chats Section -->
+          <!-- Upcoming Conversations Section -->
+          <div id="scheduledSection" class="mt-8">
+            <div class="mb-3">
+              <h4 class="text-base font-semibold text-slate-700">Upcoming Conversations</h4>
+              <p class="text-xs text-slate-500 mt-0.5">These conversation windows will open on their scheduled dates.</p>
+            </div>
+            <div id="scheduledGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <!-- Upcoming conversation cards injected here -->
+            </div>
+            <div id="scheduledEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
+              <p class="text-sm">No conversations are scheduled yet. Your provider will create new conversation windows as needed for your ongoing support.</p>
+            </div>
+          </div>
+
+          <!-- Past Conversations Section -->
           <div id="pastSection" class="mt-8">
-            <h4 class="mb-3 text-base font-semibold text-slate-700">Past Chats</h4>
+            <div class="mb-3">
+              <h4 class="text-base font-semibold text-slate-700">Previous Conversations</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Review your past discussions. These are read-only for your reference.</p>
+            </div>
             <div id="pastGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Past chat cards injected here -->
+              <!-- Past conversation cards injected here -->
             </div>
             <div id="pastEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
-              <p class="text-sm">No past conversations</p>
+              <p class="text-sm">Your completed conversations will appear here. You can review them anytime to reflect on previous discussions.</p>
             </div>
           </div>
 
           <div id="emptyState"
                class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-600">
-            <h4 class="mb-2 text-lg font-semibold text-slate-800">No Conversations Yet</h4>
-            <p>Your clinician will set up conversations for you when needed.</p>
+            <h4 class="mb-2 text-lg font-semibold text-slate-800">Getting Started</h4>
+            <p class="mb-3">Your provider will create conversation windows for you as part of your care plan. These AI partners are here for general discussion and support between your regular sessions.</p>
+            <p class="text-sm">When conversations become available, you'll see them here on your dashboard.</p>
           </div>
         </section>
       </main>
@@ -339,15 +353,19 @@
 
     function displayConversations(conversations) {
       const activeGrid = document.getElementById('activeGrid');
+      const scheduledGrid = document.getElementById('scheduledGrid');
       const pastGrid = document.getElementById('pastGrid');
       const activeEmpty = document.getElementById('activeEmpty');
+      const scheduledEmpty = document.getElementById('scheduledEmpty');
       const pastEmpty = document.getElementById('pastEmpty');
       const activeSection = document.getElementById('activeSection');
+      const scheduledSection = document.getElementById('scheduledSection');
       const pastSection = document.getElementById('pastSection');
       const emptyState = document.getElementById('emptyState');
 
       if (!conversations.length) {
         activeSection.classList.add('hidden');
+        scheduledSection.classList.add('hidden');
         pastSection.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
@@ -355,11 +373,13 @@
 
       emptyState.classList.add('hidden');
       activeSection.classList.remove('hidden');
+      scheduledSection.classList.remove('hidden');
       pastSection.classList.remove('hidden');
 
-      // Separate active and past conversations
-      const active = conversations.filter(c => c.is_active);
-      const past = conversations.filter(c => !c.is_active);
+      // Separate conversations into three categories
+      const active = conversations.filter(c => c.is_active && !c.is_upcoming);
+      const scheduled = conversations.filter(c => c.is_upcoming);
+      const past = conversations.filter(c => !c.is_active && !c.is_upcoming);
 
       // Render active conversations
       if (active.length === 0) {
@@ -369,6 +389,16 @@
         activeGrid.classList.remove('hidden');
         activeEmpty.classList.add('hidden');
         activeGrid.innerHTML = active.map(conv => renderConversationCard(conv)).join('');
+      }
+
+      // Render upcoming conversations
+      if (scheduled.length === 0) {
+        scheduledGrid.classList.add('hidden');
+        scheduledEmpty.classList.remove('hidden');
+      } else {
+        scheduledGrid.classList.remove('hidden');
+        scheduledEmpty.classList.add('hidden');
+        scheduledGrid.innerHTML = scheduled.map(conv => renderConversationCard(conv)).join('');
       }
 
       // Render past conversations
@@ -389,6 +419,48 @@
       const messages = typeof conv.message_count === 'number' ? conv.message_count : 0;
       const relative = formatRelativeTime(conv.updated_at);
 
+      // Handle unstarted templates (placeholders)
+      if (conv.is_placeholder) {
+        // Check if this is an upcoming (future) window
+        if (conv.is_upcoming) {
+          const startDate = conv.window_start_date ? new Date(conv.window_start_date * 1000).toLocaleString() : 'TBD';
+          return `
+            <article class="flex flex-col rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-5 shadow-sm ring-1 ring-slate-200 opacity-75">
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <h4 class="text-base font-semibold text-slate-700">${title}</h4>
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Upcoming</span>
+              </div>
+              <div class="mb-4 inline-flex items-center gap-2">
+                <span class="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">${model}</span>
+              </div>
+              <div class="mt-auto flex items-center gap-2 text-sm text-slate-500">
+                <span aria-hidden="true">🔒</span>
+                <span>Available ${startDate}</span>
+              </div>
+            </article>
+          `;
+        }
+
+        // Current window - clickable to start
+        return `
+          <article class="flex cursor-pointer flex-col rounded-xl bg-gradient-to-br from-indigo-50 to-sky-50 p-5 shadow-sm ring-1 ring-indigo-100 transition hover:-translate-y-0.5 hover:shadow-md"
+                   onclick="startTemplate(${conv.template_id})">
+            <div class="mb-3 flex items-start justify-between gap-3">
+              <h4 class="text-base font-semibold text-slate-900">${title}</h4>
+              <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">New</span>
+            </div>
+            <div class="mb-4 inline-flex items-center gap-2">
+              <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">${model}</span>
+            </div>
+            <div class="mt-auto flex items-center gap-2 text-sm font-medium text-indigo-600">
+              <span aria-hidden="true">▶️</span>
+              <span>Click to start this chat</span>
+            </div>
+          </article>
+        `;
+      }
+
+      // Regular conversation card
       return `
         <article class="flex cursor-pointer flex-col rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md ${isPast ? 'opacity-75' : ''}"
                  onclick="openConversation(${conv.id})">
@@ -567,6 +639,28 @@
 
     function openConversation(id) {
       window.location.href = `/conversation/${id}`;
+    }
+
+    async function startTemplate(templateId) {
+      try {
+        const response = await fetch('/api/windows/start_conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template_id: templateId })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(error.error || 'Failed to start conversation');
+          return;
+        }
+
+        const data = await response.json();
+        window.location.href = `/conversation/${data.conversation_id}`;
+      } catch (error) {
+        console.error('Error starting template:', error);
+        alert('Failed to start conversation. Please try again.');
+      }
     }
 
     async function loadSelections() {
