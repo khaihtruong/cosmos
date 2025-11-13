@@ -319,7 +319,7 @@
         console.log('Loaded conversations:', allConversations.map(c => ({
           id: c.id,
           title: c.title,
-          is_active: c.is_active,
+          visible: c.visible,
           window_end_date: c.window_end_date
         })));
         displayConversations(allConversations);
@@ -349,8 +349,8 @@
       pastSection.classList.remove('hidden');
 
       // Separate active and past conversations
-      const active = conversations.filter(c => c.is_active);
-      const past = conversations.filter(c => !c.is_active);
+      const active = conversations.filter(c => c.visible);
+      const past = conversations.filter(c => !c.visible);
 
       // Render active conversations
       if (active.length === 0) {

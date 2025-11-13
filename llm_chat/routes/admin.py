@@ -35,7 +35,7 @@ def get_all_users():
             'username': u.username,
             'email': u.email,
             'role': u.role,
-            'is_active': u.is_active,
+            'visible': u.visible,
             'created_at': u.created_at,
             'conversation_count': conversation_count
         })
@@ -192,7 +192,7 @@ def get_user_settings(user_id):
             'can_save_selections': True,
             'max_conversations_per_day': None,
             'max_messages_per_conversation': None,
-            'is_active': True
+            'visible': True
         })
     return jsonify({
         'user_id': user_settings.user_id,
@@ -202,7 +202,7 @@ def get_user_settings(user_id):
         'can_save_selections': user_settings.can_save_selections,
         'max_conversations_per_day': user_settings.max_conversations_per_day,
         'max_messages_per_conversation': user_settings.max_messages_per_conversation,
-        'is_active': user_settings.is_active
+        'visible': user_settings.visible
     })
 
 @admin_bp.route("/api/admin/user/<int:user_id>/settings", methods=['POST'])
@@ -226,8 +226,10 @@ def update_user_settings(user_id):
         user_settings.max_conversations_per_day = data['max_conversations_per_day']
     if 'max_messages_per_conversation' in data:
         user_settings.max_messages_per_conversation = data['max_messages_per_conversation']
-    if 'is_active' in data:
-        user_settings.is_active = data['is_active']
+    if 'visible' in data:
+        user_settings.visible = data['visible']
+    elif 'is_active' in data:
+        user_settings.visible = data['is_active']
 
     user_settings.updated_at = time.time()
     db.session.commit()

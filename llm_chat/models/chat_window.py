@@ -13,7 +13,8 @@ class ChatWindow(db.Model):
     description = db.Column(db.Text)
     start_date = db.Column(db.Float, nullable=False)  # Unix timestamp
     end_date = db.Column(db.Float, nullable=False)    # Unix timestamp
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
+    status = db.Column(db.String(20), default='scheduled', nullable=False)
     created_at = db.Column(db.Float, default=lambda: time.time())
     updated_at = db.Column(db.Float, onupdate=lambda: time.time())
 
@@ -28,8 +29,29 @@ class ChatWindow(db.Model):
 
     def is_current(self):
         """Check if this window is currently active based on date"""
-        now = time.time()
-        return self.is_active and self.start_date <= now <= self.end_date
+        return self.compute_status() == 'active'
+
+    def compute_status(self, now=None):
+        """Return the status string based on timing and current state."""
+        now = now or time.time()
+
+        # Terminal states: these persist regardless of time
+        if self.status in ('generating_report', 'report_ready'):
+            return self.status
+
+        if now < self.start_date:
+            return 'scheduled'
+        if self.start_date <= now <= self.end_date:
+            return 'active'
+
+        return 'generating_report'
+
+    def sync_status(self, now=None):
+        """Update persisted status to match the computed status."""
+        new_status = self.compute_status(now)
+        if self.status != new_status:
+            self.status = new_status
+        return self.status
 
     def get_report_config(self):
         """Get report configuration as dict"""
@@ -43,6 +65,7 @@ class ChatWindow(db.Model):
         self.report_config = json.dumps(config)
 
     def to_dict(self):
+        status_value = self.compute_status()
         return {
             'id': self.id,
             'patient_id': self.patient_id,
@@ -51,7 +74,8 @@ class ChatWindow(db.Model):
             'description': self.description,
             'start_date': self.start_date,
             'end_date': self.end_date,
-            'is_active': self.is_active,
+            'visible': self.visible,
+            'status': status_value,
             'is_current': self.is_current(),
             'created_at': self.created_at,
             'updated_at': self.updated_at
@@ -71,7 +95,7 @@ class ChatTemplate(db.Model):
     custom_system_prompt = db.Column(db.Text)  # If not using a predefined prompt
     max_messages = db.Column(db.Integer)  # Optional limit on messages in this chat
     order_index = db.Column(db.Integer, default=0)  # Display order
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Float, default=lambda: time.time())
 
     # Relationships
@@ -109,6 +133,6 @@ class ChatTemplate(db.Model):
             'custom_system_prompt': self.custom_system_prompt,
             'max_messages': self.max_messages,
             'order_index': self.order_index,
-            'is_active': self.is_active,
+            'visible': self.visible,
             'created_at': self.created_at
         }

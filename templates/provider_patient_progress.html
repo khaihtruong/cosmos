@@ -333,7 +333,7 @@
         const res = await fetch(`/api/windows?patient_id=${patientId}`);
         const all = await res.json();
         const now = Date.now() / 1000;
-        const active = all.filter(w => w.is_active && w.is_current);
+        const active = all.filter(w => w.visible && w.is_current);
 
         const list = document.getElementById('activeWindowsList');
         if (!active.length) {

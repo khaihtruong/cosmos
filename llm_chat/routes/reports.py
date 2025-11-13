@@ -4,7 +4,7 @@ import os
 from flask import Blueprint, jsonify, render_template, abort, request, send_file, Response
 from flask_login import login_required, current_user
 from ..models import Report, ChatWindow, User
-from ..services.report_scheduler import ReportScheduler
+from ..services.report_utils import generate_report_for_window, finalize_expired_windows
 from report.generator import UnifiedReportGenerator
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
@@ -93,7 +93,7 @@ def generate_window_report(window_id):
         abort(403)
 
     try:
-        report = ReportScheduler.generate_report_for_window(window_id)
+        report = generate_report_for_window(window_id)
         return jsonify(report.to_dict())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -102,14 +102,17 @@ def generate_window_report(window_id):
 @reports_bp.route("/check-scheduler", methods=["POST"])
 @login_required
 def check_scheduler():
-    """Manually trigger the report scheduler check (admin/provider only)"""
+    """Manually trigger report generation for any expired windows (admin/provider only)"""
     if not current_user.is_provider() and not current_user.is_admin():
         abort(403)
 
     try:
-        from ..services.report_scheduler import report_scheduler
-        report_scheduler.check_and_generate_reports()
-        return jsonify({'status': 'success', 'message': 'Report check completed'})
+        processed = finalize_expired_windows()
+        return jsonify({
+            'status': 'success',
+            'message': f'Processed {len(processed)} expired window(s)',
+            'window_ids': processed
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -186,7 +189,7 @@ def generate_unified_window_report(window_id):
         abort(403)
 
     try:
-        report = UnifiedReportGenerator.save_report(window_id)
+        report = generate_report_for_window(window_id)
         return jsonify(report.to_dict())
     except Exception as e:
         return jsonify({'error': str(e)}), 500

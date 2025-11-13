@@ -212,45 +212,39 @@
         return acc;
       }, {});
 
-      const seenPatients = new Set();
-      const items = [];
+      const items = reports
+        .slice(0, 5)
+        .map(report => {
+          const patient = patientLookup[report.patient_id];
+          const patientName = patient?.username || `Patient #${report.patient_id}`;
+          const data = report.report_data || {};
+          const windowTitle = data.window_title || 'Chat Window';
+          const generated = report.generated_at
+            ? new Date(report.generated_at * 1000).toLocaleString()
+            : 'Recently';
+          const href = `/provider/patient-progress?patient_id=${report.patient_id}`;
 
-      for (const report of reports) {
-        if (seenPatients.has(report.patient_id)) continue;
-        seenPatients.add(report.patient_id);
-
-        const patient = patientLookup[report.patient_id];
-        const patientName = patient?.username || `Patient #${report.patient_id}`;
-        const data = report.report_data || {};
-        const windowTitle = data.window_title || 'Chat Window';
-        const generated = report.generated_at
-          ? new Date(report.generated_at * 1000).toLocaleString()
-          : 'Recently';
-        const href = `/provider/patient-progress?patient_id=${report.patient_id}`;
-
-        items.push(`
-          <li class="flex items-center gap-4 py-4">
-            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500 text-white">
-              ${icon}
-            </span>
-            <div class="flex-1 text-slate-700">
-              <p class="text-sm">
-                <span class="font-semibold">${windowTitle}</span> for <span class="font-semibold">${patientName}</span>
-                is ready.
-              </p>
-              <p class="text-xs text-slate-500">Generated ${generated}</p>
-            </div>
-            <a href="${href}" class="inline-flex items-center gap-1 font-medium text-violet-600 hover:text-violet-700">
-              View
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 5l7 7-7 7"/>
-              </svg>
-            </a>
-          </li>
-        `);
-
-        if (items.length === 4) break;
-      }
+          return `
+            <li class="flex items-center gap-4 py-4">
+              <span class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500 text-white">
+                ${icon}
+              </span>
+              <div class="flex-1 text-slate-700">
+                <p class="text-sm">
+                  <span class="font-semibold">${windowTitle}</span> for <span class="font-semibold">${patientName}</span>
+                  is ready.
+                </p>
+                <p class="text-xs text-slate-500">Generated ${generated}</p>
+              </div>
+              <a href="${href}" class="inline-flex items-center gap-1 font-medium text-violet-600 hover:text-violet-700">
+                View
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </li>
+          `;
+        });
 
       list.innerHTML = items.length
         ? items.join('')

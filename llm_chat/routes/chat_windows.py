@@ -32,7 +32,7 @@ def get_chat_windows():
     result = []
     for window in windows:
         window_data = window.to_dict()
-        window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(is_active=True).order_by(ChatTemplate.order_index).all()]
+        window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(visible=True).order_by(ChatTemplate.order_index).all()]
         result.append(window_data)
 
     return jsonify(result)
@@ -82,7 +82,7 @@ def get_current_windows():
 
     windows = ChatWindow.query.filter_by(
         patient_id=current_user.id,
-        is_active=True
+        visible=True
     ).all()
 
     # Filter to only currently valid windows based on date
@@ -92,7 +92,7 @@ def get_current_windows():
     result = []
     for window in current_windows:
         window_data = window.to_dict()
-        window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(is_active=True).order_by(ChatTemplate.order_index).all()]
+        window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(visible=True).order_by(ChatTemplate.order_index).all()]
         # Check if conversations already exist for each template
         for template in window_data['templates']:
             existing_conv = Conversation.query.filter_by(
@@ -131,6 +131,7 @@ def create_chat_window():
     )
     db.session.add(window)
     db.session.flush()  # Get the ID without committing
+    window.status = window.compute_status()
 
     # Handle report configuration
     report_config = data.get('report_config')
@@ -153,6 +154,7 @@ def create_chat_window():
         )
         db.session.add(template)
 
+    window.status = window.compute_status()
     db.session.commit()
     return jsonify(window.to_dict())
 
@@ -180,8 +182,10 @@ def update_chat_window(window_id):
         window.start_date = data['start_date']
     if 'end_date' in data:
         window.end_date = data['end_date']
-    if 'is_active' in data:
-        window.is_active = data['is_active']
+    if 'visible' in data:
+        window.visible = data['visible']
+    elif 'is_active' in data:
+        window.visible = data['is_active']
 
     window.updated_at = time.time()
 
@@ -229,7 +233,7 @@ def delete_chat_window(window_id):
     # Check if there are any conversations in this window
     if window.conversations.count() > 0:
         # Instead of deleting, just deactivate it
-        window.is_active = False
+        window.visible = False
         db.session.commit()
         return jsonify({'message': 'Window deactivated (has existing conversations)'})
 

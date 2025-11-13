@@ -15,7 +15,7 @@ class Model(db.Model):
     config = db.Column(db.Text)
     is_available = db.Column(db.Boolean, default=False)
     last_availability_check = db.Column(db.Float)
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Float, default=lambda: time.time())
 
     def check_availability(self):
@@ -54,7 +54,7 @@ class Conversation(db.Model):
     # New fields for clinician-controlled chats
     window_id = db.Column(db.Integer, db.ForeignKey('chat_windows.id'), nullable=True)
     template_id = db.Column(db.Integer, db.ForeignKey('chat_templates.id'), nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Float, default=lambda: time.time())
     updated_at = db.Column(db.Float, onupdate=lambda: time.time())
 
@@ -76,7 +76,7 @@ class Conversation(db.Model):
             'model': self.model.name if self.model else None,
             'system_prompt_id': self.system_prompt_id,
             'system_prompt_content': self.system_prompt_content,
-            'is_active': self.is_active,
+            'visible': self.visible,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }

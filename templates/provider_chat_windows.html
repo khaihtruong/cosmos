@@ -313,6 +313,19 @@
     let currentReportWindowId = null;
     let activeWindowTab = 'current';
 
+    const STATUS_LABELS = {
+      scheduled: 'Scheduled',
+      active: 'Active',
+      generating_report: 'Generating Report',
+      report_ready: 'Report Ready'
+    };
+    const STATUS_CLASSES = {
+      scheduled: 'bg-amber-100 text-amber-700',
+      active: 'bg-emerald-100 text-emerald-700',
+      generating_report: 'bg-indigo-50 text-indigo-700',
+      report_ready: 'bg-purple-100 text-purple-700'
+    };
+
     function formatDate(timestamp){
       const date = new Date(timestamp * 1000);
       return date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
@@ -387,7 +400,7 @@
 
       const nowSeconds = Date.now() / 1000;
       const activeWindows = windows
-        .filter(w => w.is_active)
+        .filter(w => w.visible)
         .sort((a, b) => b.end_date - a.end_date)
         .map(w => decorateWindow(w, nowSeconds));
 
@@ -405,8 +418,8 @@
       tabsWrapper.classList.remove('hidden');
       empty.classList.add('hidden');
 
-      const currentWindows = activeWindows.filter(w => w.status === 'active' || w.status === 'scheduled');
-      const previousWindows = activeWindows.filter(w => w.status === 'finished');
+      const currentWindows = activeWindows.filter(w => ['active', 'scheduled'].includes(w.status));
+      const previousWindows = activeWindows.filter(w => ['generating_report', 'report_ready'].includes(w.status));
 
       renderWindowList(currentWindows, currentList, currentEmpty);
       renderWindowList(previousWindows, previousList, previousEmpty);
@@ -414,20 +427,32 @@
       setWindowTab(activeWindowTab);
     }
 
+    function normalizeStatus(status, windowData, nowSeconds) {
+      if (status) {
+        const normalized = status.toLowerCase();
+        if (['scheduled', 'active', 'generating_report', 'report_ready'].includes(normalized)) {
+          return normalized;
+        }
+      }
+      return deriveStatusFromDates(windowData, nowSeconds);
+    }
+
+    function deriveStatusFromDates(windowData, nowSeconds) {
+      if (nowSeconds < windowData.start_date) return 'scheduled';
+      if (nowSeconds <= windowData.end_date) return 'active';
+      return 'generating_report';
+    }
+
     function decorateWindow(windowData, nowSeconds) {
-      const hasEnded = windowData.end_date < nowSeconds;
-      let status = 'scheduled';
-      if (windowData.is_current) status = 'active';
-      else if (hasEnded) status = 'finished';
-
-      const statusClass = status === 'active'
-        ? 'bg-emerald-100 text-emerald-700'
-        : status === 'finished'
-          ? 'bg-indigo-50 text-indigo-700'
-          : 'bg-amber-100 text-amber-700';
+      const status = normalizeStatus(windowData.status, windowData, nowSeconds);
       const allowEdit = status === 'scheduled';
-
-      return { ...windowData, status, statusClass, allowEdit };
+      return {
+        ...windowData,
+        status,
+        statusLabel: STATUS_LABELS[status] || STATUS_LABELS.scheduled,
+        statusClass: STATUS_CLASSES[status] || STATUS_CLASSES.scheduled,
+        allowEdit
+      };
     }
 
     function renderWindowList(items, container, emptyEl) {
@@ -450,7 +475,7 @@
                 <div class="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900">
                   <span>${w.title}</span>
                   <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-medium ${w.statusClass}">
-                    ${w.status[0].toUpperCase() + w.status.slice(1)}
+                    ${w.statusLabel}
                   </span>
                 </div>
                 <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500">

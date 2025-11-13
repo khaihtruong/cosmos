@@ -7,7 +7,7 @@ class SystemPrompt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Float, default=lambda: time.time())
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
@@ -52,7 +52,7 @@ class UserSettings(db.Model):
     can_save_selections = db.Column(db.Boolean, default=True)
     max_conversations_per_day = db.Column(db.Integer)
     max_messages_per_conversation = db.Column(db.Integer)
-    is_active = db.Column(db.Boolean, default=True)
+    visible = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Float, default=lambda: time.time())
     updated_at = db.Column(db.Float, onupdate=lambda: time.time())
 

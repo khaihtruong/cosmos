@@ -81,7 +81,7 @@ def view_conversation(conversation_id):
         if window:
             now = time.time()
             # Can't send messages if window has ended or isn't active
-            if now > window.end_date or not window.is_active:
+            if now > window.end_date or not window.visible:
                 can_send_messages = False
 
     return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages, is_provider=is_provider)
@@ -156,7 +156,7 @@ def get_conversations():
         msgs = c.messages.order_by(Message.timestamp).all()  # because lazy='dynamic'
 
         # Determine if conversation is active (can still send messages)
-        is_active = True
+        is_visible = True
         window_end_date = None
 
         if c.window_id:
@@ -164,12 +164,12 @@ def get_conversations():
             if window:
                 window_end_date = window.end_date
                 # Conversations only become inactive when their window is explicitly deactivated
-                if not window.is_active:
-                    is_active = False
+                if not window.visible:
+                    is_visible = False
 
         # Skip empty conversations only if they're inactive (past)
         # Active conversations should show even if empty (user can still send messages)
-        if len(msgs) == 0 and not is_active:
+        if len(msgs) == 0 and not is_visible:
             continue
 
         payload.append({
@@ -180,7 +180,7 @@ def get_conversations():
             'updated_at': c.updated_at,
             'message_count': len(msgs),
             'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
-            'is_active': is_active,
+            'visible': is_visible,
             'window_end_date': window_end_date
         })
     return jsonify(payload)
@@ -241,7 +241,7 @@ def send_message(conversation_id):
         if window:
             now = time.time()
             # Can't send messages if window has ended or isn't active
-            if now > window.end_date or not window.is_active:
+            if now > window.end_date or not window.visible:
                 return jsonify({'error': 'Chat window has expired or is no longer active'}), 403
 
     # Time window and limits for patients
@@ -362,7 +362,7 @@ def delete_selection(selection_id):
 @login_required
 def get_available_models():
     """Get available models based on connectivity and restrictions"""
-    models = Model.query.filter_by(is_active=True).all()
+    models = Model.query.filter_by(visible=True).all()
     available = []
 
     for model in models:
@@ -399,7 +399,7 @@ def get_available_models():
 @login_required
 def get_system_prompts():
     """Get available system prompts with provider custom instructions applied"""
-    prompts = SystemPrompt.query.filter_by(is_active=True).all()
+    prompts = SystemPrompt.query.filter_by(visible=True).all()
 
     provider_custom_instructions = None
     if current_user.is_patient():
@@ -431,4 +431,3 @@ def get_system_prompts():
         result.append({'id': p.id, 'name': p.name, 'content': content})
 
     return jsonify(result)
-
