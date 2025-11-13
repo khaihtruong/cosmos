@@ -142,7 +142,7 @@ class AISummaryComponent(ReportComponent):
         # Check available models in database
         available_models = Model.query.filter(
             Model.name.like('gemini%'),
-            Model.is_active == True
+            Model.visible == True
         ).all()
 
         # Prioritize models

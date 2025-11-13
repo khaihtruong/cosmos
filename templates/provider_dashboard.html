@@ -61,16 +61,7 @@
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                   <path d="M4 19V5m4 14V9m4 10V7m4 12V4"/>
                 </svg>
-                <span>Patient Progress</span>
-              </a>
-            </li>
-            <li>
-              <a href="/provider/settings"
-                 class="group flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
-                <svg class="h-5 w-5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                  <path d="M10 6h4l1 2 2 1v4l-2 1-1 2h-4l-1-2-2-1V9l2-1 1-2z"/><circle cx="12" cy="12" r="2.5"/>
-                </svg>
-                <span>Settings</span>
+                <span>Patient Reports</span>
               </a>
             </li>
           </ul>
@@ -169,36 +160,47 @@
       });
     })();
 
-    // Stats
-    async function loadStats() {
+    // Dashboard data load (stats + recent reports)
+    async function loadDashboard() {
       try {
-        const patients = await (await fetch('/api/provider/patients')).json();
-        const windows  = await (await fetch('/api/windows/')).json();
-        const active   = windows.filter(w => w.is_current);
-        const templates= windows.reduce((s,w)=> s + (w.templates?.length || 0), 0);
+        const [patientsRes, windowsRes, reportsRes] = await Promise.all([
+          fetch('/api/provider/patients'),
+          fetch('/api/windows/'),
+          fetch('/api/reports/')
+        ]);
 
-        const card = (label, value) => `
-          <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-            <div class="text-2xl font-bold text-indigo-600">${value}</div>
-            <div class="text-sm text-slate-600">${label}</div>
-          </div>`;
+        const [patients, windows, reports] = await Promise.all([
+          patientsRes.json(),
+          windowsRes.json(),
+          reportsRes.json()
+        ]);
 
-        document.getElementById('statsGrid').innerHTML =
-          card('Total Patients', patients.length) +
-          card('Chat Windows', windows.length) +
-          card('Active Windows', active.length) +
-          card('Chat Templates', templates);
-      } catch (e) { console.error('Error loading stats:', e); }
+        renderStats(patients, windows);
+        renderRecentReports(reports, patients);
+      } catch (e) { console.error('Error loading dashboard data:', e); }
+    }
+
+    function renderStats(patients, windows) {
+      const active   = windows.filter(w => w.is_current);
+      const templates= windows.reduce((s,w)=> s + (w.templates?.length || 0), 0);
+
+      const card = (label, value) => `
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div class="text-2xl font-bold text-indigo-600">${value}</div>
+          <div class="text-sm text-slate-600">${label}</div>
+        </div>`;
+
+      document.getElementById('statsGrid').innerHTML =
+        card('Total Patients', patients.length) +
+        card('Chat Windows', windows.length) +
+        card('Active Windows', active.length) +
+        card('Chat Templates', templates);
     }
 
     // Recent report 
-    function renderRecentReports() {
-      const reports = [
-        { user: 'User 1', color: 'bg-violet-500', href: '/provider/chat-windows' },
-        { user: 'User 2', color: 'bg-violet-500', href: '#' },
-        { user: 'User 3', color: 'bg-violet-500', href: '#' },
-        { user: 'User 4', color: 'bg-violet-500', href: '#' },
-      ];
+    function renderRecentReports(reports = [], patients = []) {
+      const list = document.getElementById('recentList');
+      if (!list) return;
 
       const icon = `
         <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -206,31 +208,53 @@
           <path d="M13 3v5h5"/>
         </svg>`;
 
-      const html = reports.map(r => `
-        <li class="flex items-center gap-4 py-4">
-          <span class="flex h-11 w-11 items-center justify-center rounded-full ${r.color} text-white">
-            ${icon}
-          </span>
-          <p class="flex-1 text-slate-700">
-            <span class="font-semibold">Report</span> for <span class="font-semibold">${r.user}</span> is
-            <span class="font-semibold text-slate-900">ready</span>
-          </p>
-          <a href="${r.href}" class="inline-flex items-center gap-1 font-medium text-violet-600 hover:text-violet-700">
-            View
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 5l7 7-7 7"/>
-            </svg>
-          </a>
-        </li>
-      `).join('');
+      const patientLookup = patients.reduce((acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      }, {});
 
-      document.getElementById('recentList').innerHTML = html;
+      const items = reports
+        .slice(0, 5)
+        .map(report => {
+          const patient = patientLookup[report.patient_id];
+          const patientName = patient?.username || `Patient #${report.patient_id}`;
+          const data = report.report_data || {};
+          const windowTitle = data.window_title || 'Chat Window';
+          const generated = report.generated_at
+            ? new Date(report.generated_at * 1000).toLocaleString()
+            : 'Recently';
+          const href = `/provider/patient-progress?patient_id=${report.patient_id}`;
+
+          return `
+            <li class="flex items-center gap-4 py-4">
+              <span class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500 text-white">
+                ${icon}
+              </span>
+              <div class="flex-1 text-slate-700">
+                <p class="text-sm">
+                  <span class="font-semibold">${windowTitle}</span> for <span class="font-semibold">${patientName}</span>
+                  is ready.
+                </p>
+                <p class="text-xs text-slate-500">Generated ${generated}</p>
+              </div>
+              <a href="${href}" class="inline-flex items-center gap-1 font-medium text-violet-600 hover:text-violet-700">
+                View
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </li>
+          `;
+        });
+
+      list.innerHTML = items.length
+        ? items.join('')
+        : `<li class="py-6 text-center text-sm text-slate-500">No reports ready yet. Generated reports will appear here once available.</li>`;
     }
 
     async function logout(){ await fetch('/logout'); window.location.href='/login'; }
 
-    loadStats();
-    renderRecentReports();
+    loadDashboard();
   </script>
 </body>
 </html>

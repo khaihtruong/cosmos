@@ -61,10 +61,9 @@ def create_app():
     app.register_blueprint(window_bp)
     app.register_blueprint(reports_bp)
 
-    # Initialize report scheduler
+    # Start report scheduler (5-minute interval)
     from .services.report_scheduler import report_scheduler
     report_scheduler.init_app(app)
-    # Start scheduler when app context is available
     with app.app_context():
         report_scheduler.start()
 

@@ -67,11 +67,10 @@ class AISummaryComponent(ReportComponent):
         Returns:
             Model object if a Llama model is available, None otherwise.
         """
-        # Query for available Llama models from local provider
         available_models = Model.query.filter(
             Model.provider == 'local',
             Model.name.ilike('%llama%'),
-            Model.is_active == True
+            Model.visible == True
         ).all()
 
         if not available_models:
@@ -85,10 +84,8 @@ class AISummaryComponent(ReportComponent):
             print("No Llama models currently available for AI summary generation")
             return None
 
-        # Prioritize smaller models (ordered from smallest to largest)
-        # Common patterns: llama3.2, llama3.1, llama2, llama3
         priority_patterns = [
-            'llama3.2:1b',      # Smallest
+            'llama3.2:1b',
             'llama3.2:3b',
             'llama3.2',
             'llama2:7b',
@@ -99,14 +96,12 @@ class AISummaryComponent(ReportComponent):
             'llama3',
         ]
 
-        # Try to find models matching priority patterns
         for pattern in priority_patterns:
             for model in available_models:
                 if pattern.lower() in model.name.lower():
                     print(f"Selected Llama model for AI summary: {model.name}")
                     return model
 
-        # Fallback to first available Llama model
         print(f"Selected Llama model for AI summary: {available_models[0].name}")
         return available_models[0]
 

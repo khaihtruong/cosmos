@@ -157,17 +157,31 @@
             </div>
           </div>
 
-          <!-- Past Conversations Section -->
-          <div id="pastSection" class="mt-8">
+          <!-- Reports In Progress Section -->
+          <div id="processingSection" class="mt-8">
             <div class="mb-3">
-              <h4 class="text-base font-semibold text-slate-700">Previous Conversations</h4>
-              <p class="text-xs text-slate-500 mt-0.5">Review your past discussions. These are read-only for your reference.</p>
+              <h4 class="text-base font-semibold text-slate-700">Reports In Progress</h4>
+              <p class="text-xs text-slate-500 mt-0.5">These conversation windows have closed and a summary is being generated.</p>
             </div>
-            <div id="pastGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Past conversation cards injected here -->
+            <div id="processingGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <!-- Generating report cards injected here -->
             </div>
-            <div id="pastEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
-              <p class="text-sm">Your completed conversations will appear here. You can review them anytime to reflect on previous discussions.</p>
+            <div id="processingEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
+              <p class="text-sm">No reports are currently processing.</p>
+            </div>
+          </div>
+
+          <!-- Report Ready Section -->
+          <div id="readySection" class="mt-8">
+            <div class="mb-3">
+              <h4 class="text-base font-semibold text-slate-700">Report Ready Conversations</h4>
+              <p class="text-xs text-slate-500 mt-0.5">These windows are complete and summaries are available to review.</p>
+            </div>
+            <div id="readyGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <!-- Report ready cards injected here -->
+            </div>
+            <div id="readyEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
+              <p class="text-sm">Once a report is finished it will appear here so you can review your summary.</p>
             </div>
           </div>
 
@@ -324,6 +338,19 @@
       }
     }
 
+    const STATUS_LABELS = {
+      scheduled: 'Scheduled',
+      active: 'Active',
+      generating_report: 'Generating Report',
+      report_ready: 'Report Ready'
+    };
+    const STATUS_CLASSES = {
+      scheduled: 'bg-amber-100 text-amber-700',
+      active: 'bg-emerald-100 text-emerald-700',
+      generating_report: 'bg-indigo-50 text-indigo-700',
+      report_ready: 'bg-purple-100 text-purple-700'
+    };
+
     let allConversations = [];
     let dropdownIndex = -1;
     let lastMatches = [];
@@ -342,8 +369,8 @@
         console.log('Loaded conversations:', allConversations.map(c => ({
           id: c.id,
           title: c.title,
-          is_active: c.is_active,
-          window_end_date: c.window_end_date
+          status: c.window_status,
+          visible: c.visible
         })));
         displayConversations(allConversations);
       } catch (error) {
@@ -351,22 +378,37 @@
       }
     }
 
+    function getConversationStatus(conv) {
+      if (conv?.is_placeholder) {
+        return conv?.is_upcoming ? 'scheduled' : 'active';
+      }
+      const status = (conv?.window_status || conv?.status || '').toLowerCase();
+      if (STATUS_LABELS[status]) return status;
+      if (!conv?.visible) return 'generating_report';
+      if (conv?.is_upcoming) return 'scheduled';
+      return conv?.is_active ? 'active' : 'report_ready';
+    }
+
     function displayConversations(conversations) {
       const activeGrid = document.getElementById('activeGrid');
       const scheduledGrid = document.getElementById('scheduledGrid');
-      const pastGrid = document.getElementById('pastGrid');
+      const processingGrid = document.getElementById('processingGrid');
+      const readyGrid = document.getElementById('readyGrid');
       const activeEmpty = document.getElementById('activeEmpty');
       const scheduledEmpty = document.getElementById('scheduledEmpty');
-      const pastEmpty = document.getElementById('pastEmpty');
+      const processingEmpty = document.getElementById('processingEmpty');
+      const readyEmpty = document.getElementById('readyEmpty');
       const activeSection = document.getElementById('activeSection');
       const scheduledSection = document.getElementById('scheduledSection');
-      const pastSection = document.getElementById('pastSection');
+      const processingSection = document.getElementById('processingSection');
+      const readySection = document.getElementById('readySection');
       const emptyState = document.getElementById('emptyState');
 
       if (!conversations.length) {
         activeSection.classList.add('hidden');
         scheduledSection.classList.add('hidden');
-        pastSection.classList.add('hidden');
+        if (processingSection) processingSection.classList.add('hidden');
+        if (readySection) readySection.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
       }
@@ -374,50 +416,57 @@
       emptyState.classList.add('hidden');
       activeSection.classList.remove('hidden');
       scheduledSection.classList.remove('hidden');
-      pastSection.classList.remove('hidden');
+      if (processingSection) processingSection.classList.remove('hidden');
+      if (readySection) readySection.classList.remove('hidden');
 
-      // Separate conversations into three categories
-      const active = conversations.filter(c => c.is_active && !c.is_upcoming);
-      const scheduled = conversations.filter(c => c.is_upcoming);
-      const past = conversations.filter(c => !c.is_active && !c.is_upcoming);
+      const buckets = {
+        active: [],
+        scheduled: [],
+        generating_report: [],
+        report_ready: []
+      };
 
-      // Render active conversations
-      if (active.length === 0) {
-        activeGrid.classList.add('hidden');
-        activeEmpty.classList.remove('hidden');
-      } else {
-        activeGrid.classList.remove('hidden');
-        activeEmpty.classList.add('hidden');
-        activeGrid.innerHTML = active.map(conv => renderConversationCard(conv)).join('');
+      for (const conv of conversations) {
+        const status = getConversationStatus(conv);
+        const bucket = buckets[status] ? status : (conv.visible ? 'active' : 'generating_report');
+        buckets[bucket].push({ ...conv, window_status: status });
       }
 
-      // Render upcoming conversations
-      if (scheduled.length === 0) {
-        scheduledGrid.classList.add('hidden');
-        scheduledEmpty.classList.remove('hidden');
-      } else {
-        scheduledGrid.classList.remove('hidden');
-        scheduledEmpty.classList.add('hidden');
-        scheduledGrid.innerHTML = scheduled.map(conv => renderConversationCard(conv)).join('');
-      }
+      const { active, scheduled, generating_report: processing, report_ready: ready } = buckets;
 
-      // Render past conversations
-      if (past.length === 0) {
-        pastGrid.classList.add('hidden');
-        pastEmpty.classList.remove('hidden');
-      } else {
-        pastGrid.classList.remove('hidden');
-        pastEmpty.classList.add('hidden');
-        pastGrid.innerHTML = past.map(conv => renderConversationCard(conv, true)).join('');
-      }
+      const renderSection = (grid, empty, items, statusKey) => {
+        if (!grid || !empty) return;
+        if (!items.length) {
+          grid.classList.add('hidden');
+          empty.classList.remove('hidden');
+          grid.innerHTML = '';
+          return;
+        }
+        grid.classList.remove('hidden');
+        empty.classList.add('hidden');
+        grid.innerHTML = items.map(conv => renderConversationCard(conv, statusKey || conv.window_status)).join('');
+      };
+
+      renderSection(activeGrid, activeEmpty, active, 'active');
+      renderSection(scheduledGrid, scheduledEmpty, scheduled, 'scheduled');
+      renderSection(processingGrid, processingEmpty, processing, 'generating_report');
+      renderSection(readyGrid, readyEmpty, ready, 'report_ready');
     }
 
-    function renderConversationCard(conv, isPast = false) {
+    function renderConversationCard(conv, statusOverride = null) {
+      const status = statusOverride || getConversationStatus(conv);
       const title = escapeHtml(conv.title || 'Untitled Conversation');
       const model = escapeHtml(conv.model || 'Unknown model');
       const updated = escapeHtml(formatDate(conv.updated_at));
       const messages = typeof conv.message_count === 'number' ? conv.message_count : 0;
       const relative = formatRelativeTime(conv.updated_at);
+      const statusLabel = STATUS_LABELS[status] || '';
+      const statusClass = STATUS_CLASSES[status] || '';
+      const showStatusBadge = Boolean(statusLabel) && status !== 'active';
+      const statusBadge = showStatusBadge
+        ? `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass}">${statusLabel}</span>`
+        : '';
+      const isHistorical = status === 'generating_report' || status === 'report_ready';
 
       // Handle unstarted templates (placeholders)
       if (conv.is_placeholder) {
@@ -462,20 +511,29 @@
 
       // Regular conversation card
       return `
-        <article class="flex cursor-pointer flex-col rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md ${isPast ? 'opacity-75' : ''}"
+        <article class="flex cursor-pointer flex-col rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md ${isHistorical ? 'opacity-75' : ''}"
                  onclick="openConversation(${conv.id})">
           <div class="mb-3 flex items-start justify-between gap-3">
             <h4 class="text-base font-semibold text-slate-900">${title}</h4>
-            <span class="whitespace-nowrap text-xs text-slate-500">${updated}</span>
+            <div class="flex flex-col items-end gap-1 text-right">
+              <span class="whitespace-nowrap text-xs text-slate-500">${updated}</span>
+              ${statusBadge}
+            </div>
           </div>
           <div class="mb-4 inline-flex items-center gap-2">
             <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">${model}</span>
-            ${isPast ? '<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Ended</span>' : ''}
           </div>
           <div class="mt-auto flex flex-wrap gap-6 text-sm text-slate-600">
             <span class="inline-flex items-center gap-1"><span aria-hidden="true">💬</span>${messages} messages</span>
             <span class="inline-flex items-center gap-1"><span aria-hidden="true">🕐</span>${relative}</span>
           </div>
+          ${
+            status === 'generating_report'
+              ? `<div class="mt-3 flex items-center gap-2 text-sm text-indigo-600"><span aria-hidden="true">⏳</span><span>Report generation in progress</span></div>`
+              : status === 'report_ready'
+                ? `<div class="mt-3 flex items-center gap-2 text-sm text-purple-600"><span aria-hidden="true">📄</span><span>Report ready — view under <a class="underline" href="/my-reports">My Reports</a></span></div>`
+                : ''
+          }
         </article>
       `;
     }

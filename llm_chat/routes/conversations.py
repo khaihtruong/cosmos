@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from ..extensions import db
 from ..models import (
     User, ProviderPatient, ProviderSettings, SystemPrompt,
-    Conversation, Model, Message, SavedSelection, ChatWindow
+    Conversation, Model, Message, SavedSelection, ChatWindow, ChatTemplate
 )
 from ..services.llm_interface import LLMInterface
 
@@ -79,9 +79,8 @@ def view_conversation(conversation_id):
     if conversation.window_id:
         window = ChatWindow.query.get(conversation.window_id)
         if window:
-            now = time.time()
-            # Can't send messages if window has ended or isn't active
-            if now > window.end_date or not window.is_active:
+            status = window.compute_status()
+            if not window.visible or status != 'active':
                 can_send_messages = False
 
     return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages, is_provider=is_provider)
@@ -98,11 +97,13 @@ def get_conversation_data(conversation_id):
     # Get window info if conversation belongs to a window
     window_end_date = None
     window_id = None
+    window_status = None
     if conversation.window_id:
         window = ChatWindow.query.get(conversation.window_id)
         if window:
             window_end_date = window.end_date
             window_id = window.id
+            window_status = window.compute_status()
 
     return jsonify({
         'id': conversation.id,
@@ -116,6 +117,7 @@ def get_conversation_data(conversation_id):
             'name': SystemPrompt.query.get(conversation.system_prompt_id).name if conversation.system_prompt_id else None
         },
         'window_end_date': window_end_date,
+        'window_status': window_status,
         'window_id': window_id,
         'consent_provided': conversation.consent_provided,
         'messages': [m.to_dict() for m in messages]
@@ -143,119 +145,95 @@ def mark_consent_provided(conversation_id):
     db.session.commit()
     return jsonify({'status': 'success', 'consent_provided': True})
 
-'''
 @conv_bp.route("/api/conversations")
 @login_required
 def get_conversations():
-    conversations = current_user.conversations.order_by(Conversation.updated_at.desc()).all()
-    conversations_with_messages = [c for c in conversations if c.messages.count() > 0]
-    return jsonify([{
-        'id': c.id,
-        'title': c.title or 'Untitled Conversation',
-        'model': c.model.name,
-        'created_at': c.created_at,
-        'updated_at': c.updated_at,
-        'message_count': c.messages.count()
-    } for c in conversations_with_messages])
-'''
-@conv_bp.route("/api/conversations")
-@login_required
-def get_conversations():
-    from ..models import ChatWindow, ChatTemplate
-
     conversations = current_user.conversations.order_by(Conversation.updated_at.desc()).all()
 
     payload = []
     now = time.time()
-
-    # Track which templates already have conversations
     started_template_ids = set()
 
     for c in conversations:
-        msgs = c.messages.order_by(Message.timestamp).all()  # because lazy='dynamic'
+        msgs = c.messages.order_by(Message.timestamp).all()
 
-        # Track templates that have been started
         if c.template_id:
             started_template_ids.add(c.template_id)
 
-        # Determine if conversation is active (can still send messages)
-        is_active = True
-        is_upcoming = False
         window_end_date = None
+        window_status = None
+        is_upcoming = False
+        is_active = c.visible
 
         if c.window_id:
             window = ChatWindow.query.get(c.window_id)
             if window:
                 window_end_date = window.end_date
-                is_upcoming = window.is_upcoming()
-                # Conversation is inactive if window has ended or is not active
-                if now > window.end_date or not window.is_active:
+                window_status = window.compute_status(now)
+                is_upcoming = window_status == 'scheduled'
+                if not window.visible:
                     is_active = False
+                else:
+                    is_active = window_status == 'active'
 
-        # Skip empty conversations only if they're inactive (past)
-        # Active conversations should show even if empty (user can still send messages)
-        if len(msgs) == 0 and not is_active:
+        if len(msgs) == 0 and not c.visible:
             continue
 
         payload.append({
             'id': c.id,
             'title': c.title or 'Untitled Conversation',
-            'model': c.model.name,                 # stays a string for .toLowerCase()
+            'model': c.model.name,
             'created_at': c.created_at,
             'updated_at': c.updated_at,
             'message_count': len(msgs),
-            'messages': [m.to_dict() for m in msgs],  # <-- include Message.content here
+            'messages': [m.to_dict() for m in msgs],
+            'visible': c.visible,
             'is_active': is_active,
             'is_upcoming': is_upcoming,
+            'window_status': window_status,
             'window_end_date': window_end_date,
             'template_id': c.template_id
         })
 
-    # Add unstarted templates from active windows
-    windows = ChatWindow.query.filter_by(
-        patient_id=current_user.id,
-        is_active=True
-    ).all()
+    windows = [
+        w for w in ChatWindow.query.filter_by(
+            patient_id=current_user.id,
+            visible=True
+        ).all()
+        if w.compute_status(now) in ('scheduled', 'active')
+    ]
 
     for window in windows:
-        # Only include templates from windows that haven't ended yet
-        if now > window.end_date:
-            continue
-
-        # Check if window is current (started) or upcoming (future)
-        is_upcoming = window.is_upcoming()
-        is_current = window.is_current()
-
-        # Skip if window is neither current nor upcoming (should not happen given the check above)
-        if not is_current and not is_upcoming:
-            continue
+        window_status = window.compute_status(now)
+        is_upcoming = window_status == 'scheduled'
+        is_current = window_status == 'active'
 
         templates = ChatTemplate.query.filter_by(
             window_id=window.id,
-            is_active=True
+            visible=True
         ).order_by(ChatTemplate.order_index).all()
 
         for template in templates:
-            # Skip templates that already have conversations
             if template.id in started_template_ids:
                 continue
 
-            # Add placeholder for unstarted template
             title_suffix = " (Not Started)" if is_current else " (Scheduled)"
             payload.append({
-                'id': None,  # No conversation ID yet
+                'id': None,
                 'title': f"{template.title}{title_suffix}",
                 'model': template.model.name if template.model else 'Unknown',
                 'created_at': window.created_at,
                 'updated_at': window.created_at,
                 'message_count': 0,
                 'messages': [],
-                'is_active': is_current,  # Only current windows are considered "active"
-                'window_end_date': window.end_date,
+                'visible': True,
+                'is_active': is_current,
+                'is_upcoming': is_upcoming,
+                'window_status': window_status,
                 'window_start_date': window.start_date,
+                'window_end_date': window.end_date,
                 'template_id': template.id,
-                'is_placeholder': True,  # Flag to identify unstarted templates
-                'is_upcoming': is_upcoming,  # Flag to identify future windows
+                'is_placeholder': True,
                 'window_id': window.id
             })
 
@@ -315,9 +293,8 @@ def send_message(conversation_id):
     if conversation.window_id:
         window = ChatWindow.query.get(conversation.window_id)
         if window:
-            now = time.time()
-            # Can't send messages if window has ended or isn't active
-            if now > window.end_date or not window.is_active:
+            status = window.compute_status()
+            if not window.visible or status != 'active':
                 return jsonify({'error': 'Chat window has expired or is no longer active'}), 403
 
     # Time window and limits for patients
@@ -438,7 +415,7 @@ def delete_selection(selection_id):
 @login_required
 def get_available_models():
     """Get available models based on connectivity and restrictions"""
-    models = Model.query.filter_by(is_active=True).all()
+    models = Model.query.filter_by(visible=True).all()
     available = []
 
     for model in models:
@@ -475,7 +452,7 @@ def get_available_models():
 @login_required
 def get_system_prompts():
     """Get available system prompts with provider custom instructions applied"""
-    prompts = SystemPrompt.query.filter_by(is_active=True).all()
+    prompts = SystemPrompt.query.filter_by(visible=True).all()
 
     provider_custom_instructions = None
     if current_user.is_patient():
@@ -507,5 +484,3 @@ def get_system_prompts():
         result.append({'id': p.id, 'name': p.name, 'content': content})
 
     return jsonify(result)
-
-
