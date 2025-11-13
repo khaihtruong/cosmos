@@ -33,6 +33,18 @@ def get_chat_windows():
     for window in windows:
         window_data = window.to_dict()
         window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(visible=True).order_by(ChatTemplate.order_index).all()]
+
+        # For patients, check if conversations exist for each template
+        if current_user.is_patient():
+            for template in window_data['templates']:
+                existing_conv = Conversation.query.filter_by(
+                    user_id=current_user.id,
+                    window_id=window.id,
+                    template_id=template['id']
+                ).first()
+                template['has_conversation'] = existing_conv is not None
+                template['conversation_id'] = existing_conv.id if existing_conv else None
+
         result.append(window_data)
 
     return jsonify(result)
@@ -76,21 +88,21 @@ def get_chat_window(window_id):
 @window_bp.route("/current", methods=["GET"])
 @login_required
 def get_current_windows():
-    """Get currently active chat windows for the patient"""
+    """Get active chat windows for the patient (current and upcoming)"""
     if not current_user.is_patient():
         abort(403)
 
-    windows = ChatWindow.query.filter_by(
-        patient_id=current_user.id,
-        visible=True
-    ).all()
+    windows = [
+        w for w in ChatWindow.query.filter_by(
+            patient_id=current_user.id,
+            visible=True
+        ).all()
+        if w.is_current()
+    ]
 
-    # Filter to only currently valid windows based on date
-    current_windows = [w for w in windows if w.is_current()]
-
-    # Include templates for each window
+    # Include templates for each active window
     result = []
-    for window in current_windows:
+    for window in windows:
         window_data = window.to_dict()
         window_data['templates'] = [t.to_dict() for t in window.templates.filter_by(visible=True).order_by(ChatTemplate.order_index).all()]
         # Check if conversations already exist for each template
@@ -267,7 +279,7 @@ def start_conversation_from_template():
     ).first()
 
     if existing:
-        return jsonify({'id': existing.id, 'existing': True})
+        return jsonify({'conversation_id': existing.id, 'existing': True})
 
     # Create new conversation
     conversation = Conversation(
@@ -282,4 +294,4 @@ def start_conversation_from_template():
     db.session.add(conversation)
     db.session.commit()
 
-    return jsonify({'id': conversation.id, 'existing': False})
+    return jsonify({'id': conversation.id, 'conversation_id': conversation.id, 'existing': False})

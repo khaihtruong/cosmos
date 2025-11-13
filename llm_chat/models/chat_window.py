@@ -31,6 +31,11 @@ class ChatWindow(db.Model):
         """Check if this window is currently active based on date"""
         return self.compute_status() == 'active'
 
+    @property
+    def is_active(self):
+        """Compatibility shim for legacy code paths."""
+        return self.visible and self.compute_status() == 'active'
+
     def compute_status(self, now=None):
         """Return the status string based on timing and current state."""
         now = now or time.time()
@@ -52,6 +57,10 @@ class ChatWindow(db.Model):
         if self.status != new_status:
             self.status = new_status
         return self.status
+
+    def is_upcoming(self, now=None):
+        """Check if this window is scheduled for the future"""
+        return self.compute_status(now) == 'scheduled'
 
     def get_report_config(self):
         """Get report configuration as dict"""
@@ -77,6 +86,7 @@ class ChatWindow(db.Model):
             'visible': self.visible,
             'status': status_value,
             'is_current': self.is_current(),
+            'is_upcoming': self.is_upcoming(),
             'created_at': self.created_at,
             'updated_at': self.updated_at
         }

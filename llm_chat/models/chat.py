@@ -55,6 +55,7 @@ class Conversation(db.Model):
     window_id = db.Column(db.Integer, db.ForeignKey('chat_windows.id'), nullable=True)
     template_id = db.Column(db.Integer, db.ForeignKey('chat_templates.id'), nullable=True)
     visible = db.Column(db.Boolean, default=True)
+    consent_provided = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.Float, default=lambda: time.time())
     updated_at = db.Column(db.Float, onupdate=lambda: time.time())
 
@@ -77,6 +78,7 @@ class Conversation(db.Model):
             'system_prompt_id': self.system_prompt_id,
             'system_prompt_content': self.system_prompt_content,
             'visible': self.visible,
+            'consent_provided': self.consent_provided,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }

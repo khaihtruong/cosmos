@@ -10,12 +10,14 @@ from .ai_summary import AISummaryComponent
 from .saved_messages import SavedMessagesComponent
 from .descriptive_stats import DescriptiveStatsComponent
 from .nlp_analysis import NLPAnalysisComponent
+from .cooccurrence_analysis import CooccurrenceAnalysisComponent
 
 __all__ = [
     'AISummaryComponent',
     'SavedMessagesComponent',
     'DescriptiveStatsComponent',
     'NLPAnalysisComponent',
+    'CooccurrenceAnalysisComponent',
     'get_all_components',
 ]
 
@@ -25,6 +27,7 @@ COMPONENT_REGISTRY = {
     'saved_messages': SavedMessagesComponent,
     'descriptive_stats': DescriptiveStatsComponent,
     'nlp_analysis': NLPAnalysisComponent,
+    'cooccurrence_analysis': CooccurrenceAnalysisComponent,
 }
 
 
