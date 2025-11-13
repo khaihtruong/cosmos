@@ -145,7 +145,6 @@ def mark_consent_provided(conversation_id):
     db.session.commit()
     return jsonify({'status': 'success', 'consent_provided': True})
 
-'''
 @conv_bp.route("/api/conversations")
 @login_required
 def get_conversations():
