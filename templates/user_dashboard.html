@@ -135,8 +135,8 @@
               <h4 class="text-base font-semibold text-slate-700">Available Now</h4>
               <p class="text-xs text-slate-500 mt-0.5">These conversations are ready for you. Click any card to start or continue a discussion.</p>
             </div>
-            <div id="activeGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Active conversation cards injected here -->
+            <div id="activeGrid" class="space-y-6">
+              <!-- Active conversation windows injected here -->
             </div>
             <div id="activeEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
               <p class="text-sm">No conversations are available right now. Your provider will set up new conversation windows as part of your care plan. Check back soon, or explore your past conversations and summaries.</p>
@@ -149,8 +149,8 @@
               <h4 class="text-base font-semibold text-slate-700">Upcoming Conversations</h4>
               <p class="text-xs text-slate-500 mt-0.5">These conversation windows will open on their scheduled dates.</p>
             </div>
-            <div id="scheduledGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Upcoming conversation cards injected here -->
+            <div id="scheduledGrid" class="space-y-6">
+              <!-- Upcoming conversation windows injected here -->
             </div>
             <div id="scheduledEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
               <p class="text-sm">No conversations are scheduled yet. Your provider will create new conversation windows as needed for your ongoing support.</p>
@@ -163,8 +163,8 @@
               <h4 class="text-base font-semibold text-slate-700">Reports In Progress</h4>
               <p class="text-xs text-slate-500 mt-0.5">These conversation windows have closed and a summary is being generated.</p>
             </div>
-            <div id="processingGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Generating report cards injected here -->
+            <div id="processingGrid" class="space-y-6">
+              <!-- Generating report windows injected here -->
             </div>
             <div id="processingEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
               <p class="text-sm">No reports are currently processing.</p>
@@ -177,8 +177,8 @@
               <h4 class="text-base font-semibold text-slate-700">Report Ready Conversations</h4>
               <p class="text-xs text-slate-500 mt-0.5">These windows are complete and summaries are available to review.</p>
             </div>
-            <div id="readyGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <!-- Report ready cards injected here -->
+            <div id="readyGrid" class="space-y-6">
+              <!-- Report ready windows injected here -->
             </div>
             <div id="readyEmpty" class="hidden rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-600">
               <p class="text-sm">Once a report is finished it will appear here so you can review your summary.</p>
@@ -444,13 +444,159 @@
         }
         grid.classList.remove('hidden');
         empty.classList.add('hidden');
-        grid.innerHTML = items.map(conv => renderConversationCard(conv, statusKey || conv.window_status)).join('');
+
+        // Group by window
+        const windows = groupConversationsByWindow(items, statusKey);
+        grid.innerHTML = windows.map(w => renderWindowCard(w, statusKey)).join('');
       };
 
       renderSection(activeGrid, activeEmpty, active, 'active');
       renderSection(scheduledGrid, scheduledEmpty, scheduled, 'scheduled');
       renderSection(processingGrid, processingEmpty, processing, 'generating_report');
       renderSection(readyGrid, readyEmpty, ready, 'report_ready');
+    }
+
+    function groupConversationsByWindow(conversations, statusKey) {
+      const windowMap = new Map();
+
+      for (const conv of conversations) {
+        const windowId = conv.window_id || `no-window-${conv.id}`;
+
+        if (!windowMap.has(windowId)) {
+          windowMap.set(windowId, {
+            window_id: windowId,
+            window_title: conv.window_title,
+            window_description: conv.window_description,
+            window_start_date: conv.window_start_date,
+            window_end_date: conv.window_end_date,
+            status: statusKey,
+            conversations: []
+          });
+        }
+
+        windowMap.get(windowId).conversations.push(conv);
+      }
+
+      return Array.from(windowMap.values());
+    }
+
+    function renderWindowCard(window, statusKey) {
+      const windowTitle = window.window_title ? escapeHtml(window.window_title) : 'Conversations';
+      const windowDescription = window.window_description ? escapeHtml(window.window_description) : null;
+      const dateRange = window.window_start_date && window.window_end_date
+        ? `${formatDate(window.window_start_date)} – ${formatDate(window.window_end_date)}`
+        : null;
+
+      const statusLabel = STATUS_LABELS[statusKey] || '';
+      const statusClass = STATUS_CLASSES[statusKey] || 'bg-slate-100 text-slate-700';
+
+      // Add report button if report is ready
+      const reportButton = statusKey === 'report_ready'
+        ? `<a href="/my-reports?window_id=${window.window_id}"
+               class="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
+               title="View Report">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              View Report
+            </a>`
+        : '';
+
+      const conversationsHtml = window.conversations
+        .map(conv => renderConversationCardSimple(conv, statusKey))
+        .join('');
+
+      return `
+        <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
+          <div class="border-b border-slate-200 bg-white p-4">
+            <div class="mb-2 flex items-start justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900">
+                  <span>${windowTitle}</span>
+                  ${statusLabel ? `
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-medium ${statusClass}">
+                      ${statusLabel}
+                    </span>
+                  ` : ''}
+                </div>
+                ${dateRange ? `
+                  <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                    <span>${dateRange}</span>
+                  </div>
+                ` : ''}
+              </div>
+              ${reportButton ? `<div class="flex-shrink-0">${reportButton}</div>` : ''}
+            </div>
+            ${windowDescription ? `<p class="text-sm text-slate-700">${windowDescription}</p>` : ''}
+          </div>
+
+          <div class="p-4">
+            <h4 class="mb-3 text-sm font-semibold text-slate-800">Chats (${window.conversations.length})</h4>
+            ${window.conversations.length ? `
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                ${conversationsHtml}
+              </div>
+            ` : `<div class="py-6 text-center text-slate-600">No conversations in this window</div>`}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderConversationCardSimple(conv, statusOverride = null) {
+      const status = statusOverride || getConversationStatus(conv);
+      const title = escapeHtml(conv.title || 'Untitled Conversation');
+      const model = escapeHtml(conv.model || 'Unknown model');
+      const messages = typeof conv.message_count === 'number' ? conv.message_count : 0;
+      const relative = formatRelativeTime(conv.updated_at);
+      const isHistorical = status === 'generating_report' || status === 'report_ready';
+
+      // Handle unstarted templates (placeholders)
+      if (conv.is_placeholder) {
+        // Check if this is an upcoming (future) window
+        if (conv.is_upcoming) {
+          const startDate = conv.window_start_date ? formatDate(conv.window_start_date) : 'TBD';
+          return `
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 opacity-75">
+              <div class="mb-1 text-sm font-semibold text-slate-700">${title}</div>
+              <div class="flex items-center justify-between text-xs text-slate-600">
+                <span class="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">${model}</span>
+                <span>🔒 Available ${startDate}</span>
+              </div>
+            </div>
+          `;
+        }
+
+        // Current window - clickable to start
+        return `
+          <div class="cursor-pointer rounded-lg border border-indigo-200 bg-gradient-to-br from-indigo-50 to-sky-50 p-3 transition hover:shadow"
+               onclick="startTemplate(${conv.template_id})">
+            <div class="mb-1 text-sm font-semibold text-slate-900">${title}</div>
+            <div class="flex items-center justify-between text-xs text-slate-600">
+              <span class="rounded-md bg-indigo-100 px-2 py-0.5 font-medium text-indigo-700">${model}</span>
+              <span class="font-medium text-indigo-600">▶️ Click to start</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Regular conversation card
+      return `
+        <div class="${isHistorical ? 'rounded-lg border border-slate-200 bg-slate-50 p-3' : 'cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition hover:border-indigo-300 hover:shadow'}"
+             ${isHistorical ? '' : `onclick="openConversation(${conv.id})"`}>
+          <div class="mb-1 text-sm font-semibold text-slate-900">${title}</div>
+          <div class="mb-2 text-xs text-slate-500">${messages} messages • ${relative}</div>
+          <div class="flex items-center justify-between text-xs text-slate-600">
+            <span class="rounded-md bg-sky-100 px-2 py-0.5 font-medium text-sky-700">${model}</span>
+            ${
+              status === 'generating_report'
+                ? `<span class="text-indigo-600">⏳ Generating...</span>`
+                : status === 'report_ready'
+                  ? `<a class="font-medium text-purple-600 hover:text-purple-700 underline" href="/my-reports">View Report</a>`
+                  : `<span class="text-slate-500">→</span>`
+            }
+          </div>
+        </div>
+      `;
     }
 
     function renderConversationCard(conv, statusOverride = null) {
@@ -472,7 +618,7 @@
       if (conv.is_placeholder) {
         // Check if this is an upcoming (future) window
         if (conv.is_upcoming) {
-          const startDate = conv.window_start_date ? new Date(conv.window_start_date * 1000).toLocaleString() : 'TBD';
+          const startDate = conv.window_start_date ? formatDate(conv.window_start_date) : 'TBD';
           return `
             <article class="flex flex-col rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-5 shadow-sm ring-1 ring-slate-200 opacity-75">
               <div class="mb-3 flex items-start justify-between gap-3">
@@ -510,28 +656,51 @@
       }
 
       // Regular conversation card
+      const windowTitle = conv.window_title ? escapeHtml(conv.window_title) : null;
+      const windowDateRange = conv.window_start_date && conv.window_end_date
+        ? `${formatDate(conv.window_start_date)} - ${formatDate(conv.window_end_date)}`
+        : null;
+
       return `
-        <article class="flex cursor-pointer flex-col rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md ${isHistorical ? 'opacity-75' : ''}"
-                 onclick="openConversation(${conv.id})">
+        <article class="flex flex-col rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition ${isHistorical ? '' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md'}"
+                 ${isHistorical ? '' : `onclick="openConversation(${conv.id})"`}>
+          ${windowTitle ? `
+            <div class="mb-3 pb-3 border-b border-slate-100">
+              <h3 class="text-sm font-semibold text-slate-900">${windowTitle}</h3>
+              ${windowDateRange ? `<p class="mt-1 text-xs text-slate-500">📅 ${windowDateRange}</p>` : ''}
+            </div>
+          ` : ''}
+
           <div class="mb-3 flex items-start justify-between gap-3">
-            <h4 class="text-base font-semibold text-slate-900">${title}</h4>
-            <div class="flex flex-col items-end gap-1 text-right">
-              <span class="whitespace-nowrap text-xs text-slate-500">${updated}</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <h4 class="text-base font-semibold text-slate-900">${title}</h4>
               ${statusBadge}
             </div>
+            <span class="whitespace-nowrap text-xs text-slate-500">${updated}</span>
           </div>
-          <div class="mb-4 inline-flex items-center gap-2">
+
+          <div class="mb-3 inline-flex items-center gap-2">
             <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">${model}</span>
           </div>
-          <div class="mt-auto flex flex-wrap gap-6 text-sm text-slate-600">
+
+          <div class="flex flex-wrap gap-4 text-sm text-slate-600">
             <span class="inline-flex items-center gap-1"><span aria-hidden="true">💬</span>${messages} messages</span>
             <span class="inline-flex items-center gap-1"><span aria-hidden="true">🕐</span>${relative}</span>
           </div>
+
           ${
             status === 'generating_report'
-              ? `<div class="mt-3 flex items-center gap-2 text-sm text-indigo-600"><span aria-hidden="true">⏳</span><span>Report generation in progress</span></div>`
+              ? `<div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-sm text-slate-600">
+                   <span aria-hidden="true">⏳</span>
+                   <span class="italic">Report generation in progress</span>
+                 </div>`
               : status === 'report_ready'
-                ? `<div class="mt-3 flex items-center gap-2 text-sm text-purple-600"><span aria-hidden="true">📄</span><span>Report ready — view under <a class="underline" href="/my-reports">My Reports</a></span></div>`
+                ? `<div class="mt-3 pt-3 border-t border-slate-100">
+                     <span class="text-sm text-slate-600">
+                       <span aria-hidden="true">📄</span>
+                       Report ready — view under <a class="font-medium text-purple-600 hover:text-purple-700 underline" href="/my-reports">My Reports</a>
+                     </span>
+                   </div>`
                 : ''
           }
         </article>
@@ -597,7 +766,7 @@
             <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
               ${m.kind}${m.kind === 'Message' && m.role ? ` • ${escapeHtml(m.role)}` : ''}
             </span>
-            ${m.timestamp ? `<span class="ml-auto whitespace-nowrap text-xs text-slate-500">${new Date(m.timestamp * 1000).toLocaleString()}</span>` : ''}
+            ${m.timestamp ? `<span class="ml-auto whitespace-nowrap text-xs text-slate-500">${formatDateTime(m.timestamp)}</span>` : ''}
           </div>
           <div class="text-xs text-slate-600">${m.snippet}</div>
         </button>
@@ -671,7 +840,16 @@
 
     function formatDate(timestamp) {
       if (!timestamp) return '—';
-      return new Date(timestamp * 1000).toLocaleDateString();
+      const date = new Date(timestamp * 1000);
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    }
+
+    function formatDateTime(timestamp) {
+      if (!timestamp) return '—';
+      const date = new Date(timestamp * 1000);
+      const options = { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' };
+      return date.toLocaleString('en-US', options);
     }
 
     function formatRelativeTime(timestamp) {

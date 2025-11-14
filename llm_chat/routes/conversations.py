@@ -74,16 +74,17 @@ def view_conversation(conversation_id):
 
     can_send_messages = conversation.user_id == current_user.id
     is_provider = current_user.is_provider()
+    window_status = None
 
     # Check if conversation belongs to an expired window
     if conversation.window_id:
         window = ChatWindow.query.get(conversation.window_id)
         if window:
-            status = window.compute_status()
-            if not window.visible or status != 'active':
+            window_status = window.compute_status()
+            if not window.visible or window_status != 'active':
                 can_send_messages = False
 
-    return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages, is_provider=is_provider)
+    return render_template("conversation.html", conversation_id=conversation_id, can_send_messages=can_send_messages, is_provider=is_provider, window_status=window_status)
 
 @conv_bp.route("/api/conversation/<int:conversation_id>")
 @login_required
@@ -161,6 +162,9 @@ def get_conversations():
             started_template_ids.add(c.template_id)
 
         window_end_date = None
+        window_start_date = None
+        window_title = None
+        window_description = None
         window_status = None
         is_upcoming = False
         is_active = c.visible
@@ -169,6 +173,9 @@ def get_conversations():
             window = ChatWindow.query.get(c.window_id)
             if window:
                 window_end_date = window.end_date
+                window_start_date = window.start_date
+                window_title = window.title
+                window_description = window.description
                 window_status = window.compute_status(now)
                 is_upcoming = window_status == 'scheduled'
                 if not window.visible:
@@ -192,6 +199,9 @@ def get_conversations():
             'is_upcoming': is_upcoming,
             'window_status': window_status,
             'window_end_date': window_end_date,
+            'window_start_date': window_start_date,
+            'window_title': window_title,
+            'window_description': window_description,
             'template_id': c.template_id
         })
 
@@ -232,6 +242,8 @@ def get_conversations():
                 'window_status': window_status,
                 'window_start_date': window.start_date,
                 'window_end_date': window.end_date,
+                'window_title': window.title,
+                'window_description': window.description,
                 'template_id': template.id,
                 'is_placeholder': True,
                 'window_id': window.id
