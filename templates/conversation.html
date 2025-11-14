@@ -468,8 +468,19 @@
                 <p style="color: #666; margin: 0;">🔒 Read-only view - Only the patient can send messages</p>
                 {% else %}
                 <div style="color: #666; margin: 0;">
+                    {% if window_status == 'scheduled' %}
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">This conversation hasn't started yet</p>
+                    <p style="font-size: 0.875rem; margin: 0;">This conversation will be available during its scheduled time window.</p>
+                    {% elif window_status == 'generating_report' %}
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">This conversation window has closed</p>
+                    <p style="font-size: 0.875rem; margin: 0;">Your report is being generated. You can review your messages here anytime.</p>
+                    {% elif window_status == 'report_ready' %}
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">This conversation window has closed</p>
+                    <p style="font-size: 0.875rem; margin: 0;">You can review your messages here anytime. Your report is available under <a href="/my-reports" style="color: #6366f1; text-decoration: underline;">My Reports</a>.</p>
+                    {% else %}
                     <p style="font-weight: 600; margin-bottom: 0.25rem;">This conversation has ended</p>
-                    <p style="font-size: 0.875rem; margin: 0;">You can review all your messages here anytime. To see a summary of this conversation, click "View Report" above.</p>
+                    <p style="font-size: 0.875rem; margin: 0;">You can review all your messages here anytime.</p>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -657,7 +668,7 @@
 
                 // Start countdown timer if window has end date
                 if (conversationData.window_end_date) {
-                    startCountdown(conversationData.window_end_date);
+                    startCountdown(conversationData.window_end_date, conversationData.window_status);
                 }
 
                 // Load messages
@@ -791,7 +802,9 @@
         }
         
         function formatTime(timestamp) {
-            return new Date(timestamp * 1000).toLocaleString();
+            const date = new Date(timestamp * 1000);
+            const options = { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' };
+            return date.toLocaleString('en-US', options);
         }
 
         // Helper function to extract clean text from selection, excluding metadata
@@ -1032,7 +1045,7 @@
             }, 5000);
         }
         
-        function startCountdown(endTimestamp) {
+        function startCountdown(endTimestamp, windowStatus) {
             const timerEl = document.getElementById('timeRemaining');
             const timeValueEl = document.getElementById('timeValue');
             const promptInfoEl = document.getElementById('promptInfo');
@@ -1047,14 +1060,29 @@
                 const now = Date.now() / 1000; // Current time in seconds
                 const timeLeft = endTimestamp - now;
 
-                if (timeLeft <= 0) {
-                    // Replace the time remaining display with a View Report button
-                    timerEl.innerHTML = `<button onclick="viewWindowReport()" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.5rem; background: #4f46e5; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 600; color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: background 0.2s; border: none; cursor: pointer;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-                        View Report
-                        <svg style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </button>`;
+                if (timeLeft <= 0 || windowStatus === 'generating_report' || windowStatus === 'report_ready') {
+                    // Replace the time remaining display based on status
+                    if (windowStatus === 'generating_report') {
+                        timerEl.innerHTML = `<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; color: #4f46e5;">
+                            <svg style="width: 1rem; height: 1rem; animate: spin 1s linear infinite;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Report being generated...
+                        </div>`;
+                    } else if (windowStatus === 'report_ready') {
+                        timerEl.innerHTML = `<button onclick="viewWindowReport()" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.5rem; background: #4f46e5; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 600; color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: background 0.2s; border: none; cursor: pointer;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                            View Report
+                            <svg style="width: 1rem; height: 1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>`;
+                    } else {
+                        // Default: time expired
+                        timerEl.innerHTML = `<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; color: #666;">
+                            Window has closed
+                        </div>`;
+                    }
                     timerEl.classList.remove('warning');
                     timerEl.style.background = 'transparent';
                     if (countdownInterval) {
